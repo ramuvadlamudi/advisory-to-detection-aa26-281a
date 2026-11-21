@@ -54,4 +54,4 @@ Scripts read the Splunk address and credentials from environment variables or a 
 
 ## Disclaimer
 
-Community content, provided as is for training and lab use. Not an official or supported Splunk or Cisco product. Hosts, users and internal addresses are fictional; external actors use documentation IP ranges. The indicator lookups contain the real AA26-281A domains and IPs from CISA's STIX file and the DOJ seizure announcement.
+Community content, provided as is for training and lab use. Not an official or supported Splunk or Cisco product. Hosts, users and internal addresses are fictional; external actors use documentation IP ranges, except the FishHub scenario, which deliberately uses two real indicators (`fym.linkedinns.net` and 207.148.92.220, a low-confidence STIX address last seen July 2024) so the sweeps have something to find; no traffic is ever sent to them. The indicator lookups contain the real AA26-281A domains and IPs from CISA's STIX file and the DOJ seizure announcement.

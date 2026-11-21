@@ -137,7 +137,7 @@
     <tr><td>Data exfiltration</td><td>Sensitive information leaves through legitimate services</td><td>Mail leaves through EWS and Microsoft 365 app secrets</td></tr>
     <tr><td>Disconnected environments</td><td>Intelligence and detections must be operationalised locally</td><td>Indicators, detections and models must ship offline</td></tr>
   </table></div>
-  <div class="callout"><strong>17 months, from the court record.</strong> A Taiwanese university was scanned by MicroScan in March 2023; by August 2024 SoftEther was running on its servers and calling home. It was found through warrants on the attacker's servers, not by the victim's monitoring (seizure warrant affidavit, W.D. Pa., unsealed 8 Oct 2026, paragraphs 31 to 35).</div>
+  <div class="callout"><strong>17 months, from the court record.</strong> A Taiwanese university was scanned by MicroScan in March 2023; by August 2024 SoftEther was installed on its servers and connecting to an actor-bought server. The affidavit's evidence is search returns on servers Flax Typhoon bought; it doesn't say whether the university noticed (seizure warrant affidavit, W.D. Pa., unsealed 8 Oct 2026, paragraphs 31 to 35).</div>
   <p class="muted">Impacts are the presenter's assessment for a Defence context. Plan for the consequence; don't assume the breach.</p>
 </div></section>
 
@@ -488,7 +488,7 @@ python3 labctl.py findings  # raises the two ES findings</code></pre></li>
   <h2>Read this before you install anything</h2>
   <ul>
     <li><strong>Lab only.</strong> The data add-on creates indexes and adds them to a role's default search; the detection app installs 18 scheduled detections. Never install either on production.</li>
-    <li><strong>Synthetic data.</strong> Hosts, users and internal addresses are fictional; external actors use documentation ranges (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24). The two answered XSS requests and every other result are part of the scenario, not a real environment.</li>
+    <li><strong>Synthetic data.</strong> Hosts, users and internal addresses are fictional; external actors use documentation ranges (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24), except two real AA26-281A indicators in the FishHub thread (<code>fym.linkedinns.net</code> and 207.148.92.220, low confidence, last seen July 2024: retro-hunt, don't block). No traffic is ever sent to them. The two answered XSS requests and every other result are part of the scenario, not a real environment.</li>
     <li><strong>Real indicators, no traffic.</strong> The indicator lookups hold the real AA26-281A domains and IPs from CISA's STIX file and the DOJ seizure. Two of them appear in the synthetic FishHub events so the sweeps have something to find. Nothing in this repository sends traffic to them.</li>
     <li><strong>No exploitation.</strong> Nothing here exploits a system. The exploit attempts are log lines, written by a generator.</li>
     <li><strong>No credentials.</strong> Scripts read the Splunk address and credentials from environment variables or a prompt. Nothing is stored.</li>

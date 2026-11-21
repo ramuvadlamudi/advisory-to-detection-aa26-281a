@@ -23,5 +23,5 @@ ports to other SIEMs.
 | `app/integrity_tech_detections.tgz` | Install the Integrity Tech Detections app: 18 detections, lookups, catalogue, readiness and 10 dashboards (storyline, exposure and a Defender action centre) (lab first; tune the macros and lookups) |
 | `spl/` | Every demo search from the session |
 
-Lab only: the lab data is synthetic (fictional `lab.example`, documentation IP ranges). Never test against production, and never
+Lab only: the lab data is synthetic (fictional `lab.example`, documentation IP ranges, plus two real AA26-281A indicators in the FishHub thread: `fym.linkedinns.net` and 207.148.92.220). Never test against production, and never
 exploit real systems.

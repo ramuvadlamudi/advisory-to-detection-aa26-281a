@@ -1,14 +1,15 @@
 # Presenter runbook: From Advisory to Detection (AA26-281A)
 
-The v8 deck (45 minutes of talk) tells the story as an incident investigation, with **no live demo**. Every Splunk view on stage is a screenshot of
+The v9 deck (45 minutes of talk) tells the story as an incident investigation, with **no live demo**. Every Splunk view on stage is a screenshot of
 the Integrity Tech Detections app and Enterprise Security on the lab instance; describe it as a guided, end-to-end investigation
 walkthrough, and don't promise a live demo. This runbook covers what each screenshot shows, how to refresh the screenshots, and how to answer
-questions. Present from the **core deck** (`... v8 CORE (Cisco dark).pptx`, 35 slides); the full deck (70 slides) is the same main
+questions. Present from the **core deck** (`... v9 CORE (Cisco dark).pptx`, 36 slides); the full deck (71 slides) is the same main
 talk followed by the detail and appendix slides for questions. Every number on the screenshots is checked by `labctl.py validate` (31 saved reports) and `labctl.py backtest`
 (18 detections).
 
 Lab only. The data is synthetic: hosts, users and addresses are fictional (`lab.example`, 203.0.113.0/24, 198.51.100.0/24,
-192.0.2.0/24). The exploit requests carry the shape of the public exploits but no working payload. Never point the lab at
+192.0.2.0/24), with one deliberate exception: the FishHub upload goes to 207.148.92.220, a real AA26-281A STIX indicator (low
+confidence, last seen July 2024) that is also the FishHub server in paragraph 35 of the DOJ affidavit. Slides 25 and 26 label it. The exploit requests carry the shape of the public exploits but no working payload. Never point the lab at
 production, and never exploit real systems.
 
 ## The shape of the talk
@@ -17,16 +18,16 @@ The audience should feel three things, in order:
 
 | Part | Slides | Minutes | What they should feel |
 |---|---|---|---|
-| Concern | 2 to 13 | 17 | The adversary is real, patient and aimed at organisations like theirs; what telemetry it takes to see it |
-| Discovery | 14 to 25 | 15.5 | An analyst can find this intrusion, step by step, with evidence |
-| Confidence | 26 to 33 | 12 | How to avoid being the next victim, and how to run the same method on their next advisory, this week |
+| Concern | 2 to 14 | 17 | The adversary is real, patient and aimed at organisations like theirs; what telemetry it takes to see it |
+| Discovery | 15 to 26 | 15.5 | An analyst can find this intrusion, step by step, with evidence |
+| Confidence | 27 to 34 | 12 | How to avoid being the next victim, and how to run the same method on their next advisory, this week |
 
-The slide notes add up to 44.5 minutes. Don't rush slides 3 to 10; spend the most time on 14 to 25; make slide 19 a real
-show of hands and slide 22 the climax; finish on the 48-hour challenge (slide 32). Slides 16, 23 and 25 are zoom builds of
+The slide notes add up to 44.5 minutes. Don't rush slides 3 to 10; spend the most time on 15 to 26; make slide 20 a real
+show of hands and slide 23 the climax; finish on the 48-hour challenge (slide 33). Slides 17, 24 and 26 are zoom builds of
 the screenshot before them: click straight to them; they carry no extra time.
 
 The opening question is the spine: "What if this adversary was already inside your environment? Could your SOC find them before
-they take your data?" The storyline slide (22) answers it: partly, and late.
+they take your data?" The storyline slide (23) answers it: partly, and late.
 
 ## What's on the lab
 
@@ -36,25 +37,28 @@ they take your data?" The storyline slide (22) answers it: partly, and late.
 | `integrity_tech_detections` 1.1.0 | 18 detections (17 behaviours plus the finding), macros, lookups, the catalogue, the readiness register, the response actions and controls, and 10 dashboards |
 | Enterprise Security 8.5.1 | Risk data model and the analyst queue, holding two findings: j.citizen (200, 6 tactics) and a.lim (100, 3) |
 
-## The investigation (slides 14 to 25, about 15 minutes)
+## The investigation (slides 15 to 26, about 15 minutes)
 
 | Slide | Clock | Screenshot | The analyst's question | Callouts | Detail slide |
 |---|---|---|---|---|---|
-| 14 | 00:00 | `itd_overview` | What does our environment already know? | 16 of 17 detection rules fired (17 behaviour rules covering 7 behaviours, plus 1 correlation finding); say the title's time is the replay clock; 2 entities over threshold; 43% ready ("would you brief your commander on that?") | Operationalise |
-| 15, 16 zoom | 01:30 | `itd_exposure` (top) | Are we exposed, and would we see it? | 5 of 8 CVEs on our assets (not the same five as the five newly in KEV on slide 6; only ProFTPD and BIND are in both); NO LOGS; one source tried 7 techniques | Exploit attempts; Vulnerable is not exploited |
-| 17 | 03:00 | `itd_recon` | Who scanned us, what did they try, did anyone get in? | Scanned then signed in; exploit sweep; the IIS and 4624 events for j.citizen at 11:58:07 | Password spraying; Reconnaissance |
-| 18 | 05:30 | `itd_persistence` | Stolen password, or still inside? | conhost.exe is vpnbridge.exe; three signals; hourly tunnel | SoftEther ① to ③ |
-| 19 | 07:30 | none | Your call: A block the IP, B ignore, C correlate then investigate, D isolate without approval | Show of hands; don't reveal | |
-| 20 | 09:00 | none | The answer is C | Why not A, B, D (premature isolation can disrupt evidence collection; follow the IR process); what correlating found; then a person decides | SoftEther ③ |
-| 21 | 10:00 | `itd_collection` | What did they take, and how do we know? | 2,400 EWS calls; the secret added at 22:10:37; seven mailboxes read, event by event | Mail collection |
-| 22, 23 zoom | 11:30 | `itd_storyline` + `es_findings` | Six separate incidents, or one intrusion? | First signal 28 Sep 09:12, almost 10 days before the advisory (8 Oct 09:00, replay clock: 9 d 22 h 48 m elapsed, because Sydney daylight saving began on 4 Oct; the clock-face gap is 9 d 23 h 48 m); 7 detections; DCSync can't be seen; one finding per entity | Correlate; Risk; analyst's view |
-| 24, 25 zoom | 14:00 | `itd_response` (top) | What do we do, who owns it, who approves? | A workflow backed by editable lookups, not an automated response engine: 6 of 8 need approval; 2 visibility gaps; evidence on every row | |
+| 15 | 00:00 | `itd_overview` | What does our environment already know? | 16 of 17 detection rules fired (17 behaviour rules covering 7 behaviours, plus 1 correlation finding); say the title's time is the replay clock; 2 entities over the risk threshold (name it: risk-based alerting); 43% ready ("would you brief your commander on that?") | Operationalise |
+| 16, 17 zoom | 01:30 | `itd_exposure` (top) | Are we exposed, and would we see it? | 5 of 8 CVEs on our assets (not the same five as the five newly in KEV on slide 6; only ProFTPD and BIND are in both); NO LOGS; one source tried 7 techniques | Exploit attempts; Vulnerable is not exploited |
+| 18 | 03:00 | `itd_recon` | Who scanned us, what did they try, did anyone get in? | Scanned then signed in; exploit sweep; the IIS and 4624 events for j.citizen at 11:58:07 | Password spraying; Reconnaissance |
+| 19 | 05:30 | `itd_persistence` | Stolen password, or still inside? | conhost.exe is vpnbridge.exe; three signals; hourly tunnel | SoftEther ① to ③ |
+| 20 | 07:30 | none | Your call: A block the IP, B ignore, C correlate then investigate, D isolate without approval | Show of hands; don't reveal | |
+| 21 | 09:00 | none | The answer is C | Why not A, B, D (premature isolation can disrupt evidence collection; follow the IR process); what correlating found; then a person decides | SoftEther ③ |
+| 22 | 10:00 | `itd_collection` | What did they take, and how do we know? | 2,400 EWS calls; the secret added at 22:10:37; seven mailboxes read, event by event | Mail collection |
+| 23, 24 zoom | 11:30 | `itd_storyline` + `es_findings` | Six separate incidents, or one intrusion? | First signal 28 Sep 09:12, almost 10 days before the advisory (8 Oct 09:00, replay clock: 9 d 22 h 48 m elapsed, because Sydney daylight saving began on 4 Oct; the clock-face gap is 9 d 23 h 48 m); 7 detections; DCSync can't be seen; one finding per entity (risk-based alerting in ES) | Correlate; Risk; analyst's view |
+| 25, 26 zoom | 14:00 | `itd_response` (top) | What do we do, who owns it, who approves? | A workflow backed by editable lookups, not an automated response engine: 6 of 8 need approval; 2 visibility gaps; evidence on every row; 207.148.92.220 in row 4 is a real indicator (labelled) | |
 
-Slide 13 (minimum telemetry) sets up the investigation: seven sources plus context, with the lab's gaps. Slide 27 (don't be next) turns the mitigations into this week, this month and this quarter, with the Essential Eight mapping, the
-credential-reset plan if DCSync is plausible, and ACSC reporting. Slide 26 (defence by stage) is the same table as the bottom of the action centre, drawn natively. The detail section keeps the
+Slide 13 (minimum telemetry) sets up the investigation: seven sources plus context, with the lab's gaps. Slide 14 (build it, then test it) walks one
+detection through four steps before the walkthrough: hypothesis, field discovery (`fieldsummary` proves OriginalFileName is on all 10,369 Sysmon
+process events from 126 Windows hosts, and that there is no Linux), the SPL (simplified from AA26 23), and the tests (fires on WS-0417, silent on
+WS-0404 and normal conhost, untestable on Linux). Slide 28 (don't be next) turns the mitigations into this week, this month and this quarter, with the Essential Eight mapping, the
+credential-reset plan if DCSync is plausible, and ACSC reporting. Slide 27 (defence by stage) is the same table as the bottom of the action centre, drawn natively. The detail section keeps the
 readiness screenshot (`itd_readiness`) and the analyst queue with the investigate dashboard (`es_findings`, `itd_investigate`).
 
-Slide 28 uses `ai_local_run`, a recorded real run (see below). Not used on slides: `itd_detections`, `search_recon`, `search_softether`, `search_ews`, `search_dcsync`, `search_ai_draft`,
+Slide 29 uses `ai_local_run`, a recorded real run (see below). Not used on slides: `itd_detections`, `search_recon`, `search_softether`, `search_ews`, `search_dcsync`, `search_ai_draft`,
 `search_spray`. Don't use `search_discovery`: the lab is a shared server, and that search lists other teams' indexes, which
 contradicts "no Linux telemetry".
 
@@ -70,8 +74,8 @@ contradicts "no Linux telemetry".
    ```
 
 2. Open the core PDF on the presentation laptop and check the screenshots are legible on the venue projector, from the back
-   row. If the dense tables (slides 15, 22, 24) aren't readable, rely on the zoom builds after them. Nothing on stage needs the network.
-3. Check the QR code on slide 32 opens the session page on a phone.
+   row. If the dense tables (slides 16, 23, 25) aren't readable, rely on the zoom builds after them. Nothing on stage needs the network.
+3. Check the QR code on slide 33 opens the session page on a phone.
 
 ## Refreshing the screenshots
 
@@ -95,8 +99,8 @@ Only needed if the lab, the dashboards or the dates change.
 
    This writes 17 PNGs, 3200 px wide, to `screenshots/` (all ten dashboards, the ES analyst queue and six searches). Pass view
    names to capture only some, for example `capture_screenshots.py itd_recon itd_exposure`. Check each one, then rebuild the
-   deck (`python3 build_aa26_281a_deck_v8.py`) so the slides pick them up. If you move panels, check the callout positions on
-   slides 14 to 25, including the zoom builds.
+   deck (`python3 build_aa26_281a_deck_v9.py`) so the slides pick them up. If you move panels, check the callout positions on
+   slides 14 to 26, including the zoom builds.
 
 ## Three outcomes for every detection
 
@@ -123,7 +127,7 @@ Only needed if the lab, the dashboards or the dates change.
   intelligence group (AI Threat Tracker, Nov 2025) and OpenAI (Oct 2025, which concluded AI made operators faster, not newly capable).
 - **Is the AI example real?** Yes, and recorded, not live. `ai_readiness_run.py` sent ten read-only lab searches to Gemma 3 12B
   running locally through Ollama on the presenter's laptop (temperature 0, 21 Nov 2026, 101 seconds) and asked which behaviours we
-  can and can't detect. The verbatim answer and the analyst's check are on slide 28: 3 of 7 verdicts right (DCSync and mailbox
+  can and can't detect. The verbatim answer and the analyst's check are on slide 29: 3 of 7 verdicts right (DCSync and mailbox
   coverage among them), too pessimistic on the rest, and 2 of its 5 proof searches used the wrong event code. The transcript is in
   `ai-run/`. Not demonstrated: the Splunk MCP Server, the ES AI Assistant, or a deployment on a disconnected network (direction, not
   demonstrated). The older reconstructed SPL draft is only in the detail slides, labelled as reconstructed.
@@ -148,8 +152,14 @@ Only needed if the lab, the dashboards or the dates change.
 - **What if they already ran DCSync?** Assume the domain's credentials are gone. Plan a coordinated reset: krbtgt twice with
   replication in between, then privileged accounts, service accounts and application secrets, timed so the actor can't watch;
   CISA's Eviction Strategies Tool helps plan it. Report to ASD's ACSC: cyber.gov.au or 1300 CYBER1 (1300 292 371).
-- **Why does slide 22 say "almost 10 days"?** 28 Sep 09:12 AEST to 8 Oct 09:00 AEDT is 9 days 22 hours 48 minutes elapsed;
+- **Why does slide 23 say "almost 10 days"?** 28 Sep 09:12 AEST to 8 Oct 09:00 AEDT is 9 days 22 hours 48 minutes elapsed;
   daylight saving began on 4 Oct, so the clock-face difference (9 d 23 h 48 m) is an hour longer. "Almost 10 days" is true either way.
+- **Is 207.148.92.220 a real address?** Yes, deliberately; it's the only real attacker address in the lab data. It is in the advisory's
+  STIX indicators (low confidence, last seen July 2024) and paragraph 35 of the DOJ affidavit names it as the server that hosted FishHub
+  as of March 2026. Retro-hunt for it; don't block on it alone, because cloud addresses get reassigned. Every other attacker address is
+  from the documentation ranges.
+- **Did the victim find the intrusion?** The affidavit doesn't say. Its evidence is search returns on servers Flax Typhoon bought
+  (paragraphs 31 to 35). Say that, and don't claim either way.
 - **Does this need ES?** The hunts are plain SPL on CIM data models; risk aggregation and findings need ES.
 - **Does it work on a disconnected network?** Yes. Everything ships as files (two app packages, CSV lookups, synthetic data);
   nothing calls out at run time. Updates come across through the normal import process and are tested on a lab copy first.
@@ -165,4 +175,4 @@ python3 render_ai_run.py ai-run/<timestamp>     # writes screenshots/ai_local_ru
 Needs Ollama with `gemma3:12b` pulled (`MODEL` and `OLLAMA_URL` override). The model gets the advisory's seven behaviours and the
 output of ten read-only searches, never the readiness register. Its proposed searches are run back against the lab (read-only
 commands only, capped at 500 rows) and saved with the answer in `ai-run/<timestamp>/run.json`. Re-running gives a different
-answer; if you re-run, re-check every verdict before you change slide 28.
+answer; if you re-run, re-check every verdict before you change slide 29.
