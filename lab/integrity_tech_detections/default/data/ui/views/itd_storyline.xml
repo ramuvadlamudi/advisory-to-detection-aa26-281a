@@ -55,7 +55,7 @@
         "majorColor": "#EB4651",
         "sparklineDisplay": "off",
         "trendDisplay": "off",
-        "underLabel": "from first signal to the end of the time range"
+        "underLabel": "first signal to the advisory, 8 Oct 09:00 AEDT (replay clock)"
       },
       "title": "Inside before the advisory",
       "dataSources": {
@@ -179,7 +179,7 @@
       "type": "ds.search",
       "name": "Inside before the advisory",
       "options": {
-        "query": "index=risk source=\"AA26-281A - *\" ([| inputlookup aa26_lab_identities.csv | search identity=\"$entity$\" | eval risk_object=mvappend(identity, workstation) | mvexpand risk_object | fields risk_object] OR [search index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" threat_object_type=ip_address | stats count by threat_object | rename threat_object as risk_object | fields risk_object] OR risk_object=\"$entity$\") | stats min(_time) as first | addinfo | eval d=info_max_time-first | eval value=floor(d/86400).\" days \".floor((d%86400)/3600).\" h\" | fields value"
+        "query": "index=risk source=\"AA26-281A - *\" ([| inputlookup aa26_lab_identities.csv | search identity=\"$entity$\" | eval risk_object=mvappend(identity, workstation) | mvexpand risk_object | fields risk_object] OR [search index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" threat_object_type=ip_address | stats count by threat_object | rename threat_object as risk_object | fields risk_object] OR risk_object=\"$entity$\") | stats min(_time) as first | eval d=strptime(\"2026-10-08 09:00\",\"%Y-%m-%d %H:%M\")-first | eval value=if(d%86400>=64800, \"Almost \".ceil(d/86400).\" days\", floor(d/86400).\" days\") | fields value"
       }
     },
     "ds_3": {

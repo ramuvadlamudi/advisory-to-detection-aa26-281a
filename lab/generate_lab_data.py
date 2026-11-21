@@ -742,7 +742,7 @@ class Lab:
         for i, u in enumerate(self.users):
             title, dept, prio = "Staff officer", depts[i % len(depts)], "medium"
             if u["sam"] == VICTIM:
-                title, dept, prio = "Executive Officer to the Chief of Capability", "Capability Division", "high"
+                title, dept, prio = "Senior executive assistant", "Executive Office", "high"
             elif u["sam"] == FISH_USER:
                 title, dept, prio = "Research Scientist, University Partnerships", "Science and Technology", "high"
             elif i == LEGIT_VPN_INDEX:

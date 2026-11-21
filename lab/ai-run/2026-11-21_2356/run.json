@@ -1,0 +1,793 @@
+{
+  "model": "gemma3:12b",
+  "runtime": "Ollama, local",
+  "ollama_version": "0.40.16",
+  "options": {
+    "temperature": 0,
+    "seed": 7
+  },
+  "started": "2026-11-21_2356",
+  "generation_seconds": 100.7,
+  "eval_tokens": 863,
+  "evidence": [
+    {
+      "title": "Data inventory (the SOC's scenario indexes)",
+      "spl": "| tstats count min(_time) as first max(_time) as last where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by index sourcetype | eval first=strftime(first,\"%F\"), last=strftime(last,\"%F\")",
+      "rows": [
+        {
+          "index": "dns",
+          "sourcetype": "lab:dns",
+          "count": "46987",
+          "first": "2026-09-14",
+          "last": "2026-10-08"
+        },
+        {
+          "index": "exchange",
+          "sourcetype": "ms:iis:auto",
+          "count": "247418",
+          "first": "2026-09-14",
+          "last": "2026-10-08"
+        },
+        {
+          "index": "firewall",
+          "sourcetype": "lab:firewall",
+          "count": "62358",
+          "first": "2026-09-14",
+          "last": "2026-10-08"
+        },
+        {
+          "index": "o365",
+          "sourcetype": "o365:management:activity",
+          "count": "3730",
+          "first": "2026-09-14",
+          "last": "2026-10-08"
+        },
+        {
+          "index": "sysmon",
+          "sourcetype": "XmlWinEventLog",
+          "count": "11732",
+          "first": "2026-09-14",
+          "last": "2026-10-08"
+        },
+        {
+          "index": "web",
+          "sourcetype": "ms:iis:auto",
+          "count": "14269",
+          "first": "2026-09-14",
+          "last": "2026-10-08"
+        },
+        {
+          "index": "wineventlog",
+          "sourcetype": "XmlWinEventLog",
+          "count": "2159",
+          "first": "2026-09-14",
+          "last": "2026-10-08"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "Windows Security and System event codes collected",
+      "spl": "search index=wineventlog | stats count by EventCode",
+      "rows": [
+        {
+          "EventCode": "4624",
+          "count": "1850"
+        },
+        {
+          "EventCode": "4625",
+          "count": "240"
+        },
+        {
+          "EventCode": "4771",
+          "count": "42"
+        },
+        {
+          "EventCode": "7045",
+          "count": "27"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "Sysmon endpoint telemetry: event codes and host count",
+      "spl": "search index=sysmon | stats count dc(host) as hosts by EventCode",
+      "rows": [
+        {
+          "EventCode": "1",
+          "count": "10369",
+          "hosts": "126"
+        },
+        {
+          "EventCode": "11",
+          "count": "1361",
+          "hosts": "121"
+        },
+        {
+          "EventCode": "3",
+          "count": "2",
+          "hosts": "1"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "Asset inventory by category, and how many of those hosts send any log",
+      "spl": "| inputlookup aa26_lab_assets | join type=left host [| tstats count as events where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by host] | eval sends_logs=if(events>0,\"yes\",\"no\") | stats count by category internet_facing sends_logs",
+      "rows": [
+        {
+          "category": "domain_controller",
+          "internet_facing": "no",
+          "sends_logs": "yes",
+          "count": "2"
+        },
+        {
+          "category": "server",
+          "internet_facing": "no",
+          "sends_logs": "no",
+          "count": "1"
+        },
+        {
+          "category": "server",
+          "internet_facing": "no",
+          "sends_logs": "yes",
+          "count": "2"
+        },
+        {
+          "category": "server",
+          "internet_facing": "yes",
+          "sends_logs": "yes",
+          "count": "2"
+        },
+        {
+          "category": "workstation",
+          "internet_facing": "no",
+          "sends_logs": "yes",
+          "count": "120"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "Vulnerable appliances from the vulnerability inventory, and whether they send logs",
+      "spl": "| inputlookup aa26_lab_vulns | join type=left host [| tstats count as events where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by host] | fillnull value=0 events | table host product cve internet_facing events",
+      "rows": [
+        {
+          "host": "VPN01",
+          "product": "Pulse Connect Secure 9.0R3",
+          "cve": "CVE-2019-11510",
+          "internet_facing": "yes",
+          "events": "0"
+        },
+        {
+          "host": "FTP01",
+          "product": "ProFTPD 1.3.5",
+          "cve": "CVE-2015-3306",
+          "internet_facing": "yes",
+          "events": "0"
+        },
+        {
+          "host": "NS01",
+          "product": "ISC BIND 9.9.7",
+          "cve": "CVE-2015-5477",
+          "internet_facing": "yes",
+          "events": "0"
+        },
+        {
+          "host": "GIT01",
+          "product": "GitLab CE 13.10.2",
+          "cve": "CVE-2021-22205",
+          "internet_facing": "no",
+          "events": "0"
+        },
+        {
+          "host": "LEGACY01",
+          "product": "GNU Bash 4.3 (patch 26)",
+          "cve": "CVE-2014-6278",
+          "internet_facing": "no",
+          "events": "0"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "Microsoft 365 mailbox audit coverage",
+      "spl": "search index=o365 Operation=MailItemsAccessed | stats dc(MailboxOwnerUPN) as audited_mailboxes | appendcols [| inputlookup aa26_lab_identities | stats count as total_identities]",
+      "rows": [
+        {
+          "audited_mailboxes": "30",
+          "total_identities": "120"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "Microsoft 365 audit operations present",
+      "spl": "search index=o365 | stats count by Operation",
+      "rows": [
+        {
+          "Operation": "Add service principal credentials.",
+          "count": "1"
+        },
+        {
+          "Operation": "MailItemsAccessed",
+          "count": "3729"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "Firewall fields populated",
+      "spl": "search index=firewall | fieldsummary | search field IN (src, dest, dest_port, bytes_in, bytes_out, action, app) | table field count distinct_count",
+      "rows": [
+        {
+          "field": "action",
+          "count": "12500",
+          "distinct_count": "2"
+        },
+        {
+          "field": "app",
+          "count": "12500",
+          "distinct_count": "7"
+        },
+        {
+          "field": "bytes_in",
+          "count": "12500",
+          "distinct_count": "500"
+        },
+        {
+          "field": "bytes_out",
+          "count": "12500",
+          "distinct_count": "500"
+        },
+        {
+          "field": "dest",
+          "count": "12500",
+          "distinct_count": "267"
+        },
+        {
+          "field": "dest_port",
+          "count": "12500",
+          "distinct_count": "7"
+        },
+        {
+          "field": "src",
+          "count": "12500",
+          "distinct_count": "329"
+        },
+        {
+          "field": "action",
+          "count": "50000",
+          "distinct_count": "2"
+        },
+        {
+          "field": "app",
+          "count": "50000",
+          "distinct_count": "8"
+        },
+        {
+          "field": "bytes_in",
+          "count": "50000",
+          "distinct_count": "500"
+        },
+        {
+          "field": "bytes_out",
+          "count": "50000",
+          "distinct_count": "500"
+        },
+        {
+          "field": "dest",
+          "count": "50000",
+          "distinct_count": "293"
+        },
+        {
+          "field": "dest_port",
+          "count": "50000",
+          "distinct_count": "8"
+        },
+        {
+          "field": "src",
+          "count": "50000",
+          "distinct_count": "374"
+        },
+        {
+          "field": "action",
+          "count": "62358",
+          "distinct_count": "2"
+        },
+        {
+          "field": "app",
+          "count": "62358",
+          "distinct_count": "8"
+        },
+        {
+          "field": "bytes_in",
+          "count": "62358",
+          "distinct_count": "500"
+        },
+        {
+          "field": "bytes_out",
+          "count": "62358",
+          "distinct_count": "500"
+        },
+        {
+          "field": "dest",
+          "count": "62358",
+          "distinct_count": "293"
+        },
+        {
+          "field": "dest_port",
+          "count": "62358",
+          "distinct_count": "8"
+        },
+        {
+          "field": "src",
+          "count": "62358",
+          "distinct_count": "379"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "Exchange and web server (IIS) fields populated",
+      "spl": "search index=exchange OR index=web | fieldsummary | search field IN (c_ip, cs_username, cs_uri_stem, sc_status, cs_User_Agent) | table field count distinct_count",
+      "rows": [
+        {
+          "field": "c_ip",
+          "count": "12500",
+          "distinct_count": "140"
+        },
+        {
+          "field": "cs_User_Agent",
+          "count": "12500",
+          "distinct_count": "6"
+        },
+        {
+          "field": "cs_uri_stem",
+          "count": "12500",
+          "distinct_count": "5"
+        },
+        {
+          "field": "cs_username",
+          "count": "12500",
+          "distinct_count": "121"
+        },
+        {
+          "field": "sc_status",
+          "count": "12500",
+          "distinct_count": "2"
+        },
+        {
+          "field": "c_ip",
+          "count": "50000",
+          "distinct_count": "163"
+        },
+        {
+          "field": "cs_User_Agent",
+          "count": "50000",
+          "distinct_count": "6"
+        },
+        {
+          "field": "cs_uri_stem",
+          "count": "50000",
+          "distinct_count": "5"
+        },
+        {
+          "field": "cs_username",
+          "count": "50000",
+          "distinct_count": "121"
+        },
+        {
+          "field": "sc_status",
+          "count": "50000",
+          "distinct_count": "2"
+        },
+        {
+          "field": "c_ip",
+          "count": "87500",
+          "distinct_count": "182"
+        },
+        {
+          "field": "cs_User_Agent",
+          "count": "85100",
+          "distinct_count": "6"
+        },
+        {
+          "field": "cs_uri_stem",
+          "count": "87500",
+          "distinct_count": "5"
+        },
+        {
+          "field": "cs_username",
+          "count": "87500",
+          "distinct_count": "121"
+        },
+        {
+          "field": "sc_status",
+          "count": "87500",
+          "distinct_count": "2"
+        },
+        {
+          "field": "c_ip",
+          "count": "125000",
+          "distinct_count": "199"
+        },
+        {
+          "field": "cs_User_Agent",
+          "count": "122600",
+          "distinct_count": "10"
+        },
+        {
+          "field": "cs_uri_stem",
+          "count": "125000",
+          "distinct_count": "5"
+        },
+        {
+          "field": "cs_username",
+          "count": "125000",
+          "distinct_count": "121"
+        },
+        {
+          "field": "sc_status",
+          "count": "125000",
+          "distinct_count": "2"
+        },
+        {
+          "field": "c_ip",
+          "count": "162500",
+          "distinct_count": "208"
+        },
+        {
+          "field": "cs_User_Agent",
+          "count": "160100",
+          "distinct_count": "10"
+        },
+        {
+          "field": "cs_uri_stem",
+          "count": "162500",
+          "distinct_count": "5"
+        },
+        {
+          "field": "cs_username",
+          "count": "162500",
+          "distinct_count": "121"
+        },
+        {
+          "field": "sc_status",
+          "count": "162500",
+          "distinct_count": "2"
+        },
+        {
+          "field": "c_ip",
+          "count": "200000",
+          "distinct_count": "212"
+        },
+        {
+          "field": "cs_User_Agent",
+          "count": "197600",
+          "distinct_count": "10"
+        },
+        {
+          "field": "cs_uri_stem",
+          "count": "200000",
+          "distinct_count": "5"
+        },
+        {
+          "field": "cs_username",
+          "count": "200000",
+          "distinct_count": "121"
+        },
+        {
+          "field": "sc_status",
+          "count": "200000",
+          "distinct_count": "2"
+        },
+        {
+          "field": "c_ip",
+          "count": "237500",
+          "distinct_count": "216"
+        },
+        {
+          "field": "cs_User_Agent",
+          "count": "235100",
+          "distinct_count": "10"
+        },
+        {
+          "field": "cs_uri_stem",
+          "count": "237500",
+          "distinct_count": "5"
+        },
+        {
+          "field": "cs_username",
+          "count": "237500",
+          "distinct_count": "121"
+        },
+        {
+          "field": "sc_status",
+          "count": "237500",
+          "distinct_count": "2"
+        },
+        {
+          "field": "c_ip",
+          "count": "261687",
+          "distinct_count": "381"
+        },
+        {
+          "field": "cs_User_Agent",
+          "count": "259287",
+          "distinct_count": "15"
+        },
+        {
+          "field": "cs_uri_stem",
+          "count": "261687",
+          "distinct_count": "482"
+        },
+        {
+          "field": "cs_username",
+          "count": "247418",
+          "distinct_count": "121"
+        },
+        {
+          "field": "sc_status",
+          "count": "261687",
+          "distinct_count": "5"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "title": "DNS fields populated",
+      "spl": "search index=dns | fieldsummary | search field IN (src, query, answer) | table field count distinct_count",
+      "rows": [
+        {
+          "field": "answer",
+          "count": "25000",
+          "distinct_count": "32"
+        },
+        {
+          "field": "query",
+          "count": "25000",
+          "distinct_count": "23"
+        },
+        {
+          "field": "src",
+          "count": "25000",
+          "distinct_count": "120"
+        },
+        {
+          "field": "answer",
+          "count": "46987",
+          "distinct_count": "32"
+        },
+        {
+          "field": "query",
+          "count": "46987",
+          "distinct_count": "23"
+        },
+        {
+          "field": "src",
+          "count": "46987",
+          "distinct_count": "120"
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "prompt": "You are helping a SOC analyst. Use ONLY the telemetry evidence below; it is the output of searches run in this Splunk environment. Do not assume data that is not shown.\n\nQuestion: Based on the telemetry in this Splunk environment, which AA26-281A behaviours can we detect, which can't we, and why?\n\nThe seven behaviours, from the advisory:\n1. Reconnaissance: scanning of internet-facing services on ports 21, 22, 53, 80, 443 and 1080.\n2. Exploitation of public-facing applications: eight CVEs including ProFTPD, ISC BIND, Pulse Connect Secure, GitLab and Bash, plus XSS against web pages.\n3. Password spraying against Exchange (EBurst) across several Exchange interfaces.\n4. Persistence with a renamed SoftEther VPN client on Windows and Linux hosts, using SoftEther dynamic DNS.\n5. Credential theft by DCSync (Active Directory replication requested by a non-domain-controller account).\n6. Mailbox collection through Exchange Web Services and an application granted mail access.\n7. Exfiltration of collected data to actor-controlled servers.\n\nTelemetry evidence:\n## Data inventory (the SOC's scenario indexes)\nSearch: | tstats count min(_time) as first max(_time) as last where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by index sourcetype | eval first=strftime(first,\"%F\"), last=strftime(last,\"%F\")\nindex | sourcetype | count | first | last\ndns | lab:dns | 46987 | 2026-09-14 | 2026-10-08\nexchange | ms:iis:auto | 247418 | 2026-09-14 | 2026-10-08\nfirewall | lab:firewall | 62358 | 2026-09-14 | 2026-10-08\no365 | o365:management:activity | 3730 | 2026-09-14 | 2026-10-08\nsysmon | XmlWinEventLog | 11732 | 2026-09-14 | 2026-10-08\nweb | ms:iis:auto | 14269 | 2026-09-14 | 2026-10-08\nwineventlog | XmlWinEventLog | 2159 | 2026-09-14 | 2026-10-08\n\n## Windows Security and System event codes collected\nSearch: search index=wineventlog | stats count by EventCode\nEventCode | count\n4624 | 1850\n4625 | 240\n4771 | 42\n7045 | 27\n\n## Sysmon endpoint telemetry: event codes and host count\nSearch: search index=sysmon | stats count dc(host) as hosts by EventCode\nEventCode | count | hosts\n1 | 10369 | 126\n11 | 1361 | 121\n3 | 2 | 1\n\n## Asset inventory by category, and how many of those hosts send any log\nSearch: | inputlookup aa26_lab_assets | join type=left host [| tstats count as events where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by host] | eval sends_logs=if(events>0,\"yes\",\"no\") | stats count by category internet_facing sends_logs\ncategory | internet_facing | sends_logs | count\ndomain_controller | no | yes | 2\nserver | no | no | 1\nserver | no | yes | 2\nserver | yes | yes | 2\nworkstation | no | yes | 120\n\n## Vulnerable appliances from the vulnerability inventory, and whether they send logs\nSearch: | inputlookup aa26_lab_vulns | join type=left host [| tstats count as events where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by host] | fillnull value=0 events | table host product cve internet_facing events\nhost | product | cve | internet_facing | events\nVPN01 | Pulse Connect Secure 9.0R3 | CVE-2019-11510 | yes | 0\nFTP01 | ProFTPD 1.3.5 | CVE-2015-3306 | yes | 0\nNS01 | ISC BIND 9.9.7 | CVE-2015-5477 | yes | 0\nGIT01 | GitLab CE 13.10.2 | CVE-2021-22205 | no | 0\nLEGACY01 | GNU Bash 4.3 (patch 26) | CVE-2014-6278 | no | 0\n\n## Microsoft 365 mailbox audit coverage\nSearch: search index=o365 Operation=MailItemsAccessed | stats dc(MailboxOwnerUPN) as audited_mailboxes | appendcols [| inputlookup aa26_lab_identities | stats count as total_identities]\naudited_mailboxes | total_identities\n30 | 120\n\n## Microsoft 365 audit operations present\nSearch: search index=o365 | stats count by Operation\nOperation | count\nAdd service principal credentials. | 1\nMailItemsAccessed | 3729\n\n## Firewall fields populated\nSearch: search index=firewall | fieldsummary | search field IN (src, dest, dest_port, bytes_in, bytes_out, action, app) | table field count distinct_count\nfield | count | distinct_count\naction | 12500 | 2\napp | 12500 | 7\nbytes_in | 12500 | 500\nbytes_out | 12500 | 500\ndest | 12500 | 267\ndest_port | 12500 | 7\nsrc | 12500 | 329\naction | 50000 | 2\napp | 50000 | 8\nbytes_in | 50000 | 500\nbytes_out | 50000 | 500\ndest | 50000 | 293\ndest_port | 50000 | 8\nsrc | 50000 | 374\naction | 62358 | 2\napp | 62358 | 8\nbytes_in | 62358 | 500\nbytes_out | 62358 | 500\ndest | 62358 | 293\ndest_port | 62358 | 8\nsrc | 62358 | 379\n\n## Exchange and web server (IIS) fields populated\nSearch: search index=exchange OR index=web | fieldsummary | search field IN (c_ip, cs_username, cs_uri_stem, sc_status, cs_User_Agent) | table field count distinct_count\nfield | count | distinct_count\nc_ip | 12500 | 140\ncs_User_Agent | 12500 | 6\ncs_uri_stem | 12500 | 5\ncs_username | 12500 | 121\nsc_status | 12500 | 2\nc_ip | 50000 | 163\ncs_User_Agent | 50000 | 6\ncs_uri_stem | 50000 | 5\ncs_username | 50000 | 121\nsc_status | 50000 | 2\nc_ip | 87500 | 182\ncs_User_Agent | 85100 | 6\ncs_uri_stem | 87500 | 5\ncs_username | 87500 | 121\nsc_status | 87500 | 2\nc_ip | 125000 | 199\ncs_User_Agent | 122600 | 10\ncs_uri_stem | 125000 | 5\ncs_username | 125000 | 121\nsc_status | 125000 | 2\nc_ip | 162500 | 208\ncs_User_Agent | 160100 | 10\ncs_uri_stem | 162500 | 5\ncs_username | 162500 | 121\nsc_status | 162500 | 2\nc_ip | 200000 | 212\ncs_User_Agent | 197600 | 10\ncs_uri_stem | 200000 | 5\ncs_username | 200000 | 121\nsc_status | 200000 | 2\nc_ip | 237500 | 216\ncs_User_Agent | 235100 | 10\ncs_uri_stem | 237500 | 5\ncs_username | 237500 | 121\nsc_status | 237500 | 2\nc_ip | 261687 | 381\ncs_User_Agent | 259287 | 15\ncs_uri_stem | 261687 | 482\ncs_username | 247418 | 121\nsc_status | 261687 | 5\n\n## DNS fields populated\nSearch: search index=dns | fieldsummary | search field IN (src, query, answer) | table field count distinct_count\nfield | count | distinct_count\nanswer | 25000 | 32\nquery | 25000 | 23\nsrc | 25000 | 120\nanswer | 46987 | 32\nquery | 46987 | 23\nsrc | 46987 | 120\n\nAnswer in this exact format:\n1. A markdown table with columns: Behaviour | Verdict (Detectable, Partial or Not detectable) | Evidence (quote the evidence that supports the verdict) | Missing telemetry.\n2. Then, for every behaviour that is Partial or Not detectable, one Splunk SPL search that would prove the gap in this environment, in a ```spl code block, preceded by the behaviour number.\nBe concise. If the evidence does not show something, say it is not shown.",
+  "answer": "Here's an analysis of the AA26-281A behaviors based on the provided telemetry, formatted as requested.\n\n| Behaviour | Verdict | Evidence | Missing telemetry |\n|---|---|---|---|\n| 1. Reconnaissance: scanning of internet-facing services on ports 21, 22, 53, 80, 443 and 1080 | Not detectable | Firewall data shows `dest_port` with a distinct count of 8.  This suggests some port scanning activity, but doesn't specify the ports being scanned.  DNS data shows queries, but doesn't indicate scanning. | Specific port scanning events (e.g., multiple connections to different ports from the same source within a short timeframe) are not explicitly logged and correlated. |\n| 2. Exploitation of public-facing applications: eight CVEs including ProFTPD, ISC BIND, Pulse Connect Secure, GitLab and Bash, plus XSS against web pages | Partial | Vulnerability inventory shows Pulse Connect Secure, ProFTPD, ISC BIND, GitLab and Bash are present.  Web data shows `cs_uri_stem` and `sc_status` fields populated, indicating web requests.  No evidence of exploitation attempts is shown. | Evidence of exploitation attempts (e.g., specific exploit signatures, unusual HTTP request patterns, successful authentication attempts using known vulnerabilities) is missing. |\n| 3. Password spraying against Exchange (EBurst) across several Exchange interfaces | Not detectable | Exchange data shows `cs_username` field populated, but no specific indicators of password spraying (multiple failed login attempts against different accounts). |  Telemetry to identify repeated failed login attempts against different user accounts within a short timeframe is not present. |\n| 4. Persistence with a renamed SoftEther VPN client on Windows and Linux hosts, using SoftEther dynamic DNS | Not detectable | No telemetry related to SoftEther VPN client installation, renaming, or dynamic DNS usage is present. |  Sysmon event codes related to process creation and modification, specifically targeting SoftEther VPN, are not shown. |\n| 5. Credential theft by DCSync (Active Directory replication requested by a non-domain-controller account) | Not detectable | Windows event code 4624 (Authentication Success) is present, but no specific DCSync events are logged.  Domain controllers are identified, but no unusual replication requests are evident. |  Specific DCSync event logging (e.g., event IDs related to AD replication requests from non-domain controllers) is not present. |\n| 6. Mailbox collection through Exchange Web Services and an application granted mail access | Partial | O365 audit logs show `MailItemsAccessed` operations.  The number of audited mailboxes (30) is significantly lower than the total number of identities (120), suggesting incomplete coverage. |  Detailed logs of which mailboxes are being accessed, by whom, and for what purpose are limited. |\n| 7. Exfiltration of collected data to actor-controlled servers | Not detectable | Firewall data shows `dest` and `src` fields populated, indicating network traffic, but no specific indicators of data exfiltration (e.g., large data transfers to unusual destinations, unusual protocols). |  Network traffic analysis focused on identifying unusual outbound connections and data transfer patterns is not present. |\n\n---\n\n**Additional SPL Searches to Prove Gaps:**\n\n```spl\nindex=firewall src=* dest=* dest_port IN (21,22,53,80,443,1080)\n```\n\n```spl\nindex=exchange status=401 cs_username=*  | stats count by cs_username\n```\n\n```spl\nindex=sysmon EventCode=4688  | search Image=\"softether.exe\"\n```\n\n```spl\nindex=wineventlog EventCode=4768 | stats count by TargetUserName\n```\n\n```spl\nindex=firewall dest=* NOT (dest IN (internal_ip_ranges)) | stats sum(bytes_out) by dest\n```",
+  "proving_searches": [
+    {
+      "proposed": 1,
+      "spl": "index=firewall src=* dest=* dest_port IN (21,22,53,80,443,1080)",
+      "row_count": 500,
+      "rows": [
+        {
+          "_bkt": "firewall~0~8910E2CD-39A3-4207-B3C7-0792D6C7C837",
+          "_cd": "0:498880",
+          "_indextime": "1794967561",
+          "_kv": "1",
+          "_raw": "2026-10-07T21:59:56.513Z dvc=fw-edge01 action=allowed transport=tcp src=10.20.4.57 src_port=55678 dest=142.250.70.206 dest_port=443 bytes_in=327387 bytes_out=15129 duration=80 app=ssl rule=allow",
+          "_serial": "0",
+          "_si": [
+            "splunk-server",
+            "firewall"
+          ],
+          "_sourcetype": "lab:firewall",
+          "_subsecond": ".513",
+          "_time": "2026-10-08 08:59:56.513 AEDT",
+          "action": "allowed",
+          "app": "ssl",
+          "dest": "142.250.70.206",
+          "dest_port": "443",
+          "host": "fw-edge01",
+          "index": "firewall",
+          "linecount": "1",
+          "source": "lab:firewall",
+          "sourcetype": "lab:firewall",
+          "splunk_server": "splunk-server",
+          "src": "10.20.4.57",
+          "transport": "tcp"
+        },
+        {
+          "_bkt": "firewall~0~8910E2CD-39A3-4207-B3C7-0792D6C7C837",
+          "_cd": "0:498872",
+          "_indextime": "1794967561",
+          "_kv": "1",
+          "_raw": "2026-10-07T21:59:26.674Z dvc=fw-edge01 action=allowed transport=tcp src=10.20.4.45 src_port=56843 dest=52.96.88.162 dest_port=443 bytes_in=388197 bytes_out=1060 duration=99 app=ssl rule=allow",
+          "_serial": "1",
+          "_si": [
+            "splunk-server",
+            "firewall"
+          ],
+          "_sourcetype": "lab:firewall",
+          "_subsecond": ".674",
+          "_time": "2026-10-08 08:59:26.674 AEDT",
+          "action": "allowed",
+          "app": "ssl",
+          "dest": "52.96.88.162",
+          "dest_port": "443",
+          "host": "fw-edge01",
+          "index": "firewall",
+          "linecount": "1",
+          "source": "lab:firewall",
+          "sourcetype": "lab:firewall",
+          "splunk_server": "splunk-server",
+          "src": "10.20.4.45",
+          "transport": "tcp"
+        },
+        {
+          "_bkt": "firewall~0~8910E2CD-39A3-4207-B3C7-0792D6C7C837",
+          "_cd": "0:498864",
+          "_indextime": "1794967561",
+          "_kv": "1",
+          "_raw": "2026-10-07T21:59:22.739Z dvc=fw-edge01 action=allowed transport=tcp src=10.20.4.84 src_port=58971 dest=104.18.33.7 dest_port=443 bytes_in=43897 bytes_out=2959 duration=26 app=ssl rule=allow",
+          "_serial": "2",
+          "_si": [
+            "splunk-server",
+            "firewall"
+          ],
+          "_sourcetype": "lab:firewall",
+          "_subsecond": ".739",
+          "_time": "2026-10-08 08:59:22.739 AEDT",
+          "action": "allowed",
+          "app": "ssl",
+          "dest": "104.18.33.7",
+          "dest_port": "443",
+          "host": "fw-edge01",
+          "index": "firewall",
+          "linecount": "1",
+          "source": "lab:firewall",
+          "sourcetype": "lab:firewall",
+          "splunk_server": "splunk-server",
+          "src": "10.20.4.84",
+          "transport": "tcp"
+        },
+        {
+          "_bkt": "firewall~0~8910E2CD-39A3-4207-B3C7-0792D6C7C837",
+          "_cd": "0:498856",
+          "_indextime": "1794967561",
+          "_kv": "1",
+          "_raw": "2026-10-07T21:58:39.393Z dvc=fw-edge01 action=allowed transport=tcp src=198.51.100.125 src_port=64090 dest=192.0.2.25 dest_port=443 bytes_in=3428 bytes_out=38274 duration=46 app=ssl rule=allow",
+          "_serial": "3",
+          "_si": [
+            "splunk-server",
+            "firewall"
+          ],
+          "_sourcetype": "lab:firewall",
+          "_subsecond": ".393",
+          "_time": "2026-10-08 08:58:39.393 AEDT",
+          "action": "allowed",
+          "app": "ssl",
+          "dest": "192.0.2.25",
+          "dest_port": "443",
+          "host": "fw-edge01",
+          "index": "firewall",
+          "linecount": "1",
+          "source": "lab:firewall",
+          "sourcetype": "lab:firewall",
+          "splunk_server": "splunk-server",
+          "src": "198.51.100.125",
+          "transport": "tcp"
+        },
+        {
+          "_bkt": "firewall~0~8910E2CD-39A3-4207-B3C7-0792D6C7C837",
+          "_cd": "0:498848",
+          "_indextime": "1794967561",
+          "_kv": "1",
+          "_raw": "2026-10-07T21:58:35.394Z dvc=fw-edge01 action=allowed transport=tcp src=198.51.100.187 src_port=58846 dest=192.0.2.25 dest_port=443 bytes_in=8127 bytes_out=41155 duration=9 app=ssl rule=allow",
+          "_serial": "4",
+          "_si": [
+            "splunk-server",
+            "firewall"
+          ],
+          "_sourcetype": "lab:firewall",
+          "_subsecond": ".394",
+          "_time": "2026-10-08 08:58:35.394 AEDT",
+          "action": "allowed",
+          "app": "ssl",
+          "dest": "192.0.2.25",
+          "dest_port": "443",
+          "host": "fw-edge01",
+          "index": "firewall",
+          "linecount": "1",
+          "source": "lab:firewall",
+          "sourcetype": "lab:firewall",
+          "splunk_server": "splunk-server",
+          "src": "198.51.100.187",
+          "transport": "tcp"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "proposed": 2,
+      "spl": "index=exchange status=401 cs_username=* | stats count by cs_username",
+      "row_count": 82,
+      "rows": [
+        {
+          "cs_username": "a.chen",
+          "count": "1"
+        },
+        {
+          "cs_username": "a.harris",
+          "count": "3"
+        },
+        {
+          "cs_username": "a.lim",
+          "count": "2"
+        },
+        {
+          "cs_username": "a.martin",
+          "count": "2"
+        },
+        {
+          "cs_username": "a.robinson",
+          "count": "2"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "proposed": 3,
+      "spl": "index=sysmon EventCode=4688 | search Image=\"softether.exe\"",
+      "row_count": 0,
+      "rows": [],
+      "errors": []
+    },
+    {
+      "proposed": 4,
+      "spl": "index=wineventlog EventCode=4768 | stats count by TargetUserName",
+      "row_count": 0,
+      "rows": [],
+      "errors": []
+    },
+    {
+      "proposed": 5,
+      "spl": "index=firewall dest=* NOT (dest IN (internal_ip_ranges)) | stats sum(bytes_out) by dest",
+      "row_count": 293,
+      "rows": [
+        {
+          "dest": "10.20.0.10",
+          "sum(bytes_out)": "150080"
+        },
+        {
+          "dest": "10.20.0.11",
+          "sum(bytes_out)": "123838"
+        },
+        {
+          "dest": "10.20.1.20",
+          "sum(bytes_out)": "68696"
+        },
+        {
+          "dest": "10.20.1.30",
+          "sum(bytes_out)": "114925"
+        },
+        {
+          "dest": "10.20.1.40",
+          "sum(bytes_out)": "127827"
+        }
+      ],
+      "errors": []
+    }
+  ]
+}

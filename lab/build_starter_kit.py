@@ -352,6 +352,7 @@ ports to other SIEMs.
 | `07-analyst-investigation-playbook.md` | Work a finding from open to escalation |
 | `08-readiness-calculator.csv`, `readiness.py` | Report coverage and confidence for one advisory |
 | `09-ai-prompts.md` | Use AI for the slow parts, and check its work |
+| `ai-run/` | The recorded run from the session: a local model asked which behaviours the lab can't detect, its verbatim answer, and the script to repeat it |
 | `10-exercise.md` | Take the 48-hour challenge on a new advisory |
 | `11-demo-runbook.md` | Rerun the session walkthrough: what each screenshot shows, pre-flight checks and how to recapture |
 | `app/integrity_tech_detections.tgz` | Install the Integrity Tech Detections app: 18 detections, lookups, catalogue, readiness and 10 dashboards (storyline, exposure and a Defender action centre) (lab first; tune the macros and lookups) |
@@ -690,6 +691,9 @@ def main():
     write_docs(es, readiness)
     (KIT / "app").mkdir()
     shutil.copy2(HERE / "dist" / "integrity_tech_detections.tgz", KIT / "app")
+    shutil.copytree(HERE / "ai-run", KIT / "ai-run")
+    for script in ("ai_readiness_run.py", "render_ai_run.py"):
+        shutil.copy2(HERE / script, KIT / "ai-run")
     with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as z:
         for p in sorted(KIT.rglob("*")):
             if p.is_file():

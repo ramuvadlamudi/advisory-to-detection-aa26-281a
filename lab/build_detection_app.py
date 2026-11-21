@@ -274,9 +274,10 @@ def dashboards():
              {"input_entity": {"type": "input.text", "title": "Identity", "options": {"token": "entity", "defaultValue": "j.citizen"}}})
     d.single("First signal", chain + ' | stats min(_time) as t | eval t=strftime(t,"%d %b %H:%M") | fields t', 0, 0, color="#FFFFFF",
              under="the first detection that touched this chain")
-    d.single("Inside before the advisory", chain + ' | stats min(_time) as first | addinfo | eval d=info_max_time-first '
-             '| eval value=floor(d/86400)." days ".floor((d%86400)/3600)." h" | fields value', 360, 0, color=RED,
-             under="from first signal to the end of the time range")
+    d.single("Inside before the advisory", chain + ' | stats min(_time) as first '
+             '| eval d=strptime("2026-10-08 09:00","%Y-%m-%d %H:%M")-first '
+             '| eval value=if(d%86400>=64800, "Almost ".ceil(d/86400)." days", floor(d/86400)." days") | fields value', 360, 0, color=RED,
+             under="first signal to the advisory, 8 Oct 09:00 AEDT (replay clock)")
     d.single("Detections in the chain", chain + ' | stats dc(source)', 720, 0, under="each quiet on its own")
     d.single("Behaviours we cannot see", '| inputlookup itd_readiness.csv | where status="Missing" | stats count', 1080, 0, color=RED,
              under="DCSync: no 4662 telemetry")

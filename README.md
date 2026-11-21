@@ -14,7 +14,7 @@ From the [latest release](https://github.com/ramuvadlamudi/advisory-to-detection
 |---|---|
 | `integrity_tech_detections.tgz` | The Integrity Tech Detections app: 18 Enterprise Security detections (17 behaviours and one correlation finding), 10 dashboards, 13 lookups |
 | `TA-aa26-281a-lab.tgz` | Synthetic lab data: 388,653 events from 14 Sep to 8 Oct 2026 (Sydney time), 31 saved reports with expected results |
-| `aa26-281a-starter-kit.zip` | The vendor-independent starter kit: playbook, hypothesis worksheet, catalogue, test plan, tuning guide, readiness calculator, AI prompts, an exercise, YAML for each detection and the SPL |
+| `aa26-281a-starter-kit.zip` | The vendor-independent starter kit: playbook, hypothesis worksheet, catalogue, test plan, tuning guide, readiness calculator, AI prompts, the recorded local-model run, an exercise, YAML for each detection and the SPL |
 | `SHA256SUMS.txt` | Checksums for the three files |
 
 ## What's in this repository
@@ -22,7 +22,7 @@ From the [latest release](https://github.com/ramuvadlamudi/advisory-to-detection
 | Path | Contents |
 |---|---|
 | `docs/` | The GitHub Pages site: context, the investigation, how to use the app |
-| `lab/` | The generator for the synthetic data and saved reports (`generate_lab_data.py`), the app source and builder (`build_detection_app.py`), the starter-kit builder, and helper scripts for a lab instance (`labctl.py`, `upload_app.py`, `push_searches.py`, `capture_screenshots.py`). `lab/README.md` explains the scenario; `lab/DEMO_SEARCHES.md` lists every search with its expected result. |
+| `lab/` | The generator for the synthetic data and saved reports (`generate_lab_data.py`), the app source and builder (`build_detection_app.py`), the starter-kit builder, and helper scripts for a lab instance (`labctl.py`, `upload_app.py`, `push_searches.py`, `capture_screenshots.py`). `ai_readiness_run.py` asks a locally hosted model (Ollama) which behaviours the lab can't detect, from read-only search results, and `ai-run/` holds the recorded run. `lab/README.md` explains the scenario; `lab/DEMO_SEARCHES.md` lists every search with its expected result. |
 | `starter-kit/` | The starter kit, readable on GitHub |
 
 The `dist/` packages referred to in `lab/README.md` are the release files above. To rebuild them, run `python3 generate_lab_data.py` and `python3 build_detection_app.py` in `lab/`. The generator needs only Python 3.9+; the app builder also needs Pillow and `rsvg-convert` (librsvg) for the app icon, which comes from [Tabler Icons](https://tabler.io/icons) (MIT).

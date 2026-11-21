@@ -116,6 +116,7 @@
     <div class="card"><h4>3. Recent, not history</h4><p>Five of the eight were only added to CISA's Known Exploited Vulnerabilities catalogue with this advisory: exploitation was confirmed recently, not a decade ago.</p></div>
     <div class="card"><h4>4. Some never reach a web log</h4><p>A ProFTPD or BIND exploit hits the appliance, not IIS. A log search can't find it; only an inventory can.</p></div>
   </div>
+  <div class="callout"><strong>Probed ≠ exploited.</strong> MicroScan probes a long list of products (OpenSSL, WebLogic, Jenkins, Struts, Juniper ScreenOS and more). The table above is the narrower list the advisory says was successfully exploited.</div>
   <div class="callout blue"><strong>What it teaches:</strong> not "patch faster" in the abstract. Know what you run, know what faces the internet, and know whether it sends logs. If a contractor can inventory your internet-facing services, so can you.</div>
 </div></section>
 
@@ -136,6 +137,7 @@
     <tr><td>Data exfiltration</td><td>Sensitive information leaves through legitimate services</td><td>Mail leaves through EWS and Microsoft 365 app secrets</td></tr>
     <tr><td>Disconnected environments</td><td>Intelligence and detections must be operationalised locally</td><td>Indicators, detections and models must ship offline</td></tr>
   </table></div>
+  <div class="callout"><strong>17 months, from the court record.</strong> A Taiwanese university was scanned by MicroScan in March 2023; by August 2024 SoftEther was running on its servers and calling home. It was found through warrants on the attacker's servers, not by the victim's monitoring (seizure warrant affidavit, W.D. Pa., unsealed 8 Oct 2026, paragraphs 31 to 35).</div>
   <p class="muted">Impacts are the presenter's assessment for a Defence context. Plan for the consequence; don't assume the breach.</p>
 </div></section>
 
@@ -185,7 +187,7 @@
       <div class="label">Step 2 of 8 · Exposure</div>
       <h3>Are we exposed to the advisory's CVEs, and would we even see an attack on them?</h3>
       <ol>
-        <li><strong>5 of the 8 CVEs are on our assets.</strong> VPN01 and FTP01 face the internet and were scanned by the actor: patch now.</li>
+        <li><strong>5 of the 8 CVEs are on our assets.</strong> Not the same five as the five newly added to KEV: only ProFTPD and BIND are in both. VPN01 and FTP01 face the internet and were scanned by the actor: patch now.</li>
         <li><strong>NO LOGS:</strong> every vulnerable appliance sends nothing to Splunk. That's unknown, not safe.</li>
         <li><strong>One source tried 7 techniques</strong> against WEB01 in two minutes: six advisory CVEs plus XSS. Two XSS requests were answered.</li>
       </ol>
@@ -260,7 +262,7 @@
       <div class="label">Step 7 of 8 · Storyline</div>
       <h3>Six separate incidents, or one coordinated intrusion?</h3>
       <ol>
-        <li><strong>First signal: 28 Sep, 09:12</strong>, 9 days 22 hours before the advisory landed.</li>
+        <li><strong>First signal: 28 Sep, 09:12</strong>, almost 10 days before the advisory landed (8 Oct 09:00 AEDT on the replay clock: 9 days 22 hours 48 minutes elapsed, because daylight saving began on 4 Oct).</li>
         <li><strong>Seven detections, one chain:</strong> scan, exploit, spray, sign-in, VPN, secret, mail. Each is quiet on its own.</li>
         <li><strong>One thing we can't see:</strong> DCSync. No 4662 telemetry, so the chain has a hole.</li>
       </ol>
@@ -337,6 +339,11 @@
       <li><strong>Filter egress:</strong> allow-list outbound; block dynamic DNS unless approved.</li>
       <li><strong>Re-test every quarter:</strong> replay the simulation and check readiness.</li>
     </ul></div>
+  </div>
+  <div class="grid g3">
+    <div class="card green"><h4>Essential Eight</h4><p>This maps onto patching applications and operating systems, MFA, application control and restricting administrative privileges.</p></div>
+    <div class="card red"><h4>If DCSync is plausible</h4><p>Eviction is more than isolate and revoke. Assume the domain's credentials are gone and plan a coordinated reset: krbtgt twice with replication in between, then privileged accounts, service accounts and application secrets, timed so the actor can't watch. <a href="https://www.cisa.gov/eviction-strategies-tool">CISA's Eviction Strategies Tool</a> helps plan it.</p></div>
+    <div class="card orange"><h4>Report it</h4><p>To ASD's ACSC: <a href="https://www.cyber.gov.au/report-and-recover/report">cyber.gov.au</a> or 1300 CYBER1 (1300 292 371).</p></div>
   </div>
 </div></section>
 
@@ -437,15 +444,18 @@ python3 labctl.py findings  # raises the two ES findings</code></pre></li>
 </div></section>
 
 <section id="ai"><div class="wrap">
-  <div class="kicker">AI-assisted detection engineering</div>
-  <h2>Draft, then prove</h2>
-  <p>AI changes the speed and scale on both sides, but AI-generated SPL is not a validated detection. In the lab, a typical first draft assumed <code>src_ip</code> and <code>action=failure</code>: zero rows. Zero can mean "no attack" or "wrong fields". The analyst checked the schema (the IIS client field is <code>c_ip</code>; a failed logon is <code>sc_status=401</code>) and the corrected search found all 64 sprayed users.</p>
+  <div class="kicker">AI, on both sides</div>
+  <h2>Ask it, then check it</h2>
+  <p class="lead">AA26-281A describes automation, not AI. But three independent reports from late 2025 show state actors already using AI to move faster: <a href="https://www.anthropic.com/news/disrupting-AI-espionage">Anthropic</a> (an AI agent ran most of a Chinese state-sponsored espionage campaign), <a href="https://cloud.google.com/blog/topics/threat-intelligence/threat-actor-usage-of-ai-tools">Google's threat intelligence group</a> (PRC-nexus actors using Gemini across the attack lifecycle; APT28 malware querying an LLM in live operations) and <a href="https://openai.com/global-affairs/disrupting-malicious-uses-of-ai-october-2025/">OpenAI</a> (China-aligned operators using ChatGPT for phishing and tooling: faster, not newly capable).</p>
+  <h3>A recorded real run against the lab</h3>
+  <p>We asked a locally hosted model (Gemma 3 12B through Ollama, on a laptop, temperature 0) the readiness question: <em>"Based on the telemetry in this Splunk environment, which AA26-281A behaviours can we detect, which can't we, and why?"</em> It got the advisory's seven behaviours and the output of ten read-only lab searches, never the answer. Then we checked every claim.</p>
+  <img src="img/ai_local_run.png" alt="The model's verbatim answer: a verdict per behaviour, and the searches it proposed with the rows each returned in the lab" loading="lazy" style="width:100%;border:1px solid #2a3d55;border-radius:6px">
   <div class="grid g3">
-    <div class="card"><h4>1 · Advisory analysis</h4><p>Extract behaviours, ATT&amp;CK techniques, hypotheses, telemetry and blind spots. Check: every claim quotes the advisory.</p></div>
-    <div class="card"><h4>2 · Detection engineering</h4><p>Draft SPL from the schema you actually have. Check: does it run, does it detect, and what legitimate activity triggers it?</p></div>
-    <div class="card"><h4>3 · Explainable investigation</h4><p>Why the entity was flagged, which events, what's missing, what next. Check: the analyst can challenge every point.</p></div>
+    <div class="card green"><h4>Right: 3 of 7</h4><p>DCSync really is invisible (no event 4662), mailbox auditing really covers 30 of 120, and web exploits are only partly visible.</p></div>
+    <div class="card red"><h4>Wrong: 4 of 7</h4><p>It called reconnaissance, spraying, the disguised VPN and exfiltration undetectable, though the fields and Sysmon process events were in its evidence. Its own spray search found 82 accounts.</p></div>
+    <div class="card orange"><h4>Its proof searches</h4><p>Two of five used the wrong event code (4688 instead of Sysmon event 1; 4768 instead of 4662). Zero rows from a wrong search proves nothing.</p></div>
   </div>
-  <p class="muted">Prompts are in the starter kit (<code>09-ai-prompts.md</code>). AI assists; people approve.</p>
+  <p class="muted">A useful first draft, not a verdict: untested AI output is not a detection. The script, prompt and verbatim transcript are in the starter kit (<code>ai-run/</code>), with prompts in <code>09-ai-prompts.md</code>. Not demonstrated: the Splunk MCP Server, the ES AI Assistant, or a deployment on a disconnected network (direction, not demonstrated). AI assists; people approve.</p>
 </div></section>
 
 <section id="actions"><div class="wrap">
@@ -497,6 +507,11 @@ python3 labctl.py findings  # raises the two ES findings</code></pre></li>
     <li><a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog">CISA Known Exploited Vulnerabilities catalogue</a>.</li>
     <li><a href="https://research.splunk.com/stories/flax_typhoon/">Splunk Security Content: Flax Typhoon analytic story</a>.</li>
     <li><a href="https://attack.mitre.org/">MITRE ATT&amp;CK</a>.</li>
+    <li>Anthropic, <a href="https://www.anthropic.com/news/disrupting-AI-espionage">"Disrupting the first reported AI-orchestrated cyber espionage campaign"</a>, November 2025.</li>
+    <li>Google Threat Intelligence Group, <a href="https://cloud.google.com/blog/topics/threat-intelligence/threat-actor-usage-of-ai-tools">"AI Threat Tracker: Advances in Threat Actor Usage of AI Tools"</a>, 5 November 2025.</li>
+    <li>OpenAI, <a href="https://openai.com/global-affairs/disrupting-malicious-uses-of-ai-october-2025/">"Disrupting malicious uses of AI"</a>, October 2025.</li>
+    <li><a href="https://www.cyber.gov.au/business-government/asds-cyber-security-frameworks/essential-eight">ASD's Essential Eight</a> and <a href="https://www.cyber.gov.au/report-and-recover/report">reporting to ASD's ACSC</a>.</li>
+    <li><a href="https://www.cisa.gov/eviction-strategies-tool">CISA Eviction Strategies Tool</a>.</li>
   </ul>
 </div></section>
 

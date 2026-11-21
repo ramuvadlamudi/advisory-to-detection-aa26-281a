@@ -1,0 +1,152 @@
+You are helping a SOC analyst. Use ONLY the telemetry evidence below; it is the output of searches run in this Splunk environment. Do not assume data that is not shown.
+
+Question: Based on the telemetry in this Splunk environment, which AA26-281A behaviours can we detect, which can't we, and why?
+
+The seven behaviours, from the advisory:
+1. Reconnaissance: scanning of internet-facing services on ports 21, 22, 53, 80, 443 and 1080.
+2. Exploitation of public-facing applications: eight CVEs including ProFTPD, ISC BIND, Pulse Connect Secure, GitLab and Bash, plus XSS against web pages.
+3. Password spraying against Exchange (EBurst) across several Exchange interfaces.
+4. Persistence with a renamed SoftEther VPN client on Windows and Linux hosts, using SoftEther dynamic DNS.
+5. Credential theft by DCSync (Active Directory replication requested by a non-domain-controller account).
+6. Mailbox collection through Exchange Web Services and an application granted mail access.
+7. Exfiltration of collected data to actor-controlled servers.
+
+Telemetry evidence:
+## Data inventory (the SOC's scenario indexes)
+Search: | tstats count min(_time) as first max(_time) as last where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by index sourcetype | eval first=strftime(first,"%F"), last=strftime(last,"%F")
+index | sourcetype | count | first | last
+dns | lab:dns | 46987 | 2026-09-14 | 2026-10-08
+exchange | ms:iis:auto | 247418 | 2026-09-14 | 2026-10-08
+firewall | lab:firewall | 62358 | 2026-09-14 | 2026-10-08
+o365 | o365:management:activity | 3730 | 2026-09-14 | 2026-10-08
+sysmon | XmlWinEventLog | 11732 | 2026-09-14 | 2026-10-08
+web | ms:iis:auto | 14269 | 2026-09-14 | 2026-10-08
+wineventlog | XmlWinEventLog | 2159 | 2026-09-14 | 2026-10-08
+
+## Windows Security and System event codes collected
+Search: search index=wineventlog | stats count by EventCode
+EventCode | count
+4624 | 1850
+4625 | 240
+4771 | 42
+7045 | 27
+
+## Sysmon endpoint telemetry: event codes and host count
+Search: search index=sysmon | stats count dc(host) as hosts by EventCode
+EventCode | count | hosts
+1 | 10369 | 126
+11 | 1361 | 121
+3 | 2 | 1
+
+## Asset inventory by category, and how many of those hosts send any log
+Search: | inputlookup aa26_lab_assets | join type=left host [| tstats count as events where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by host] | eval sends_logs=if(events>0,"yes","no") | stats count by category internet_facing sends_logs
+category | internet_facing | sends_logs | count
+domain_controller | no | yes | 2
+server | no | no | 1
+server | no | yes | 2
+server | yes | yes | 2
+workstation | no | yes | 120
+
+## Vulnerable appliances from the vulnerability inventory, and whether they send logs
+Search: | inputlookup aa26_lab_vulns | join type=left host [| tstats count as events where index IN (dns, exchange, firewall, o365, sysmon, web, wineventlog) by host] | fillnull value=0 events | table host product cve internet_facing events
+host | product | cve | internet_facing | events
+VPN01 | Pulse Connect Secure 9.0R3 | CVE-2019-11510 | yes | 0
+FTP01 | ProFTPD 1.3.5 | CVE-2015-3306 | yes | 0
+NS01 | ISC BIND 9.9.7 | CVE-2015-5477 | yes | 0
+GIT01 | GitLab CE 13.10.2 | CVE-2021-22205 | no | 0
+LEGACY01 | GNU Bash 4.3 (patch 26) | CVE-2014-6278 | no | 0
+
+## Microsoft 365 mailbox audit coverage
+Search: search index=o365 Operation=MailItemsAccessed | stats dc(MailboxOwnerUPN) as audited_mailboxes | appendcols [| inputlookup aa26_lab_identities | stats count as total_identities]
+audited_mailboxes | total_identities
+30 | 120
+
+## Microsoft 365 audit operations present
+Search: search index=o365 | stats count by Operation
+Operation | count
+Add service principal credentials. | 1
+MailItemsAccessed | 3729
+
+## Firewall fields populated
+Search: search index=firewall | fieldsummary | search field IN (src, dest, dest_port, bytes_in, bytes_out, action, app) | table field count distinct_count
+field | count | distinct_count
+action | 12500 | 2
+app | 12500 | 7
+bytes_in | 12500 | 500
+bytes_out | 12500 | 500
+dest | 12500 | 267
+dest_port | 12500 | 7
+src | 12500 | 329
+action | 50000 | 2
+app | 50000 | 8
+bytes_in | 50000 | 500
+bytes_out | 50000 | 500
+dest | 50000 | 293
+dest_port | 50000 | 8
+src | 50000 | 374
+action | 62358 | 2
+app | 62358 | 8
+bytes_in | 62358 | 500
+bytes_out | 62358 | 500
+dest | 62358 | 293
+dest_port | 62358 | 8
+src | 62358 | 379
+
+## Exchange and web server (IIS) fields populated
+Search: search index=exchange OR index=web | fieldsummary | search field IN (c_ip, cs_username, cs_uri_stem, sc_status, cs_User_Agent) | table field count distinct_count
+field | count | distinct_count
+c_ip | 12500 | 140
+cs_User_Agent | 12500 | 6
+cs_uri_stem | 12500 | 5
+cs_username | 12500 | 121
+sc_status | 12500 | 2
+c_ip | 50000 | 163
+cs_User_Agent | 50000 | 6
+cs_uri_stem | 50000 | 5
+cs_username | 50000 | 121
+sc_status | 50000 | 2
+c_ip | 87500 | 182
+cs_User_Agent | 85100 | 6
+cs_uri_stem | 87500 | 5
+cs_username | 87500 | 121
+sc_status | 87500 | 2
+c_ip | 125000 | 199
+cs_User_Agent | 122600 | 10
+cs_uri_stem | 125000 | 5
+cs_username | 125000 | 121
+sc_status | 125000 | 2
+c_ip | 162500 | 208
+cs_User_Agent | 160100 | 10
+cs_uri_stem | 162500 | 5
+cs_username | 162500 | 121
+sc_status | 162500 | 2
+c_ip | 200000 | 212
+cs_User_Agent | 197600 | 10
+cs_uri_stem | 200000 | 5
+cs_username | 200000 | 121
+sc_status | 200000 | 2
+c_ip | 237500 | 216
+cs_User_Agent | 235100 | 10
+cs_uri_stem | 237500 | 5
+cs_username | 237500 | 121
+sc_status | 237500 | 2
+c_ip | 261687 | 381
+cs_User_Agent | 259287 | 15
+cs_uri_stem | 261687 | 482
+cs_username | 247418 | 121
+sc_status | 261687 | 5
+
+## DNS fields populated
+Search: search index=dns | fieldsummary | search field IN (src, query, answer) | table field count distinct_count
+field | count | distinct_count
+answer | 25000 | 32
+query | 25000 | 23
+src | 25000 | 120
+answer | 46987 | 32
+query | 46987 | 23
+src | 46987 | 120
+
+Answer in this exact format:
+1. A markdown table with columns: Behaviour | Verdict (Detectable, Partial or Not detectable) | Evidence (quote the evidence that supports the verdict) | Missing telemetry.
+2. Then, for every behaviour that is Partial or Not detectable, one Splunk SPL search that would prove the gap in this environment, in a ```spl code block, preceded by the behaviour number.
+Be concise. If the evidence does not show something, say it is not shown.
