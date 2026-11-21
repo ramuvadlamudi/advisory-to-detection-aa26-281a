@@ -32,6 +32,11 @@ def table_html(md):
     return "\n".join(out) + "</table>"
 
 
+def rows_label(check):
+    n = check.get("row_count")
+    return "–" if n is None else f"{n}+ (capped)" if n >= 500 else str(n)
+
+
 def main(run_dir):
     run_dir = Path(run_dir)
     rec = json.loads((run_dir / "run.json").read_text())
@@ -39,7 +44,7 @@ def main(run_dir):
     table_md = "\n".join(l for l in answer.splitlines() if l.strip().startswith("|"))
     checks = rec.get("proving_searches", [])
     check_rows = "".join(
-        f"<tr><td><code>{html.escape(c['spl'])}</code></td><td class='n'>{c.get('row_count', '–')}</td></tr>" for c in checks)
+        f"<tr><td><code>{html.escape(c['spl'])}</code></td><td class='n'>{rows_label(c)}</td></tr>" for c in checks)
     page = f"""<!doctype html><meta charset="utf-8"><style>
     body {{ margin:0; background:#0b1a2e; color:#e6eaef; font:15px/1.35 -apple-system, 'Helvetica Neue', sans-serif; width:1500px; }}
     .wrap {{ padding:22px 26px; }}
