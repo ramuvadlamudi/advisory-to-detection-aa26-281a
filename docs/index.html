@@ -364,15 +364,20 @@ python3 labctl.py findings  # raises the two ES findings</code></pre></li>
   </ol>
   <p class="muted">Want different dates? <code>python3 generate_lab_data.py --day0 YYYY-MM-DD --hunt YYYY-MM-DDTHH:MM</code> rebuilds the data, saved reports and package. Splunk Cloud won't accept an app that monitors bundled files; send the files through a forwarder or HEC using <code>output/manifest.json</code>. Full detail: <a href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/blob/main/lab/README.md">lab/README.md</a>.</p>
 
-  <h3>What it needs from your environment (week 1)</h3>
+  <h3>Minimum telemetry to detect this campaign</h3>
+  <p>Seven sources plus context. Missing one isn't failure; it's a named blind spot with an owner.</p>
   <div class="table-wrap"><table>
-    <tr><th>Data</th><th>Used for</th></tr>
-    <tr><td>Firewall, DNS and web, CIM-mapped</td><td>Scanning, exploit attempts, enumeration, dynamic DNS, tunnels, uploads, known-bad destinations</td></tr>
-    <tr><td>Exchange IIS logs and Microsoft 365 unified audit (MailItemsAccessed on every mailbox)</td><td>Spraying, spray success, EWS volume, app secrets and consent, app mailbox reads</td></tr>
-    <tr><td>Sysmon or EDR process, file and DNS events</td><td>SoftEther masquerading, decoy file names, FishHub-style stagers</td></tr>
-    <tr><td>Windows Security 4624, 4625, 4662 (with the replication SACL) and System 7045</td><td>Sign-ins, autostart services, DCSync</td></tr>
-    <tr><td>Enterprise Security (optional)</td><td>Risk scoring and findings. Every hunt and dashboard search is plain SPL.</td></tr>
+    <tr><th>Source</th><th>Minimum it must record</th><th>Catches</th><th>In the lab</th></tr>
+    <tr><td>Firewall or flow logs</td><td>Source, destination, port, bytes in and out</td><td>Reconnaissance, tunnels, exfiltration</td><td><span class="chip green">In lab</span></td></tr>
+    <tr><td>DNS query logs</td><td>Client host and query name</td><td>SoftEther dynamic DNS, FishHub domains</td><td><span class="chip green">In lab</span></td></tr>
+    <tr><td>Web server or WAF</td><td>Client IP, URI, status, user agent</td><td>Exploit attempts, XSS, enumeration</td><td><span class="chip green">In lab</span></td></tr>
+    <tr><td>Mail and identity sign-ins</td><td>Exchange IIS or IdP: user, source, result</td><td>Password spraying and the sign-in that worked</td><td><span class="chip green">In lab</span></td></tr>
+    <tr><td>Endpoint: Sysmon or EDR</td><td>Process creation with the original file name; DNS</td><td>The disguised VPN, script stagers</td><td><span class="chip orange">Windows only</span></td></tr>
+    <tr><td>Windows Security and System</td><td>4624, 4625, 7045; 4662 with the replication SACL</td><td>Sign-ins, autostart services, DCSync</td><td><span class="chip red">No 4662</span></td></tr>
+    <tr><td>Microsoft 365 audit</td><td>MailItemsAccessed on every mailbox; app secret and consent events</td><td>Mail collection</td><td><span class="chip orange">30 of 120</span></td></tr>
+    <tr><td>Context, not telemetry</td><td>Assets, identities, vulnerabilities, approved scanners and remote-access tools</td><td>Scoping and tuning</td><td><span class="chip green">In lab</span></td></tr>
   </table></div>
+  <p class="muted">Edge appliances (VPN, FTP, DNS servers) and Linux endpoints: forward their logs, or report them as Unknown, not safe. Enterprise Security is optional: risk scoring and findings need it, but every hunt and dashboard search is plain SPL.</p>
 
   <div class="callout blue"><strong>Disconnected and classified networks.</strong> Everything ships as files: two app packages, CSV lookups and the synthetic data. Nothing calls out at run time. Bring updates across through your normal import process, test on a lab copy with the synthetic data, then promote like any other change. If you use AI to help draft detections there, it has to be a locally hosted model, and its output goes through the same tests.</div>
 </div></section>
