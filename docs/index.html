@@ -12,10 +12,11 @@
 <nav class="top"><div class="wrap">
   <a class="brand" href="#">Advisory to Detection</a>
   <a href="#download">Download</a>
-  <a href="#advisory">The advisory</a>
+  <a href="#method">Method</a>
+  <a href="#advisory">Worked example</a>
   <a href="#old-cves">Old CVEs</a>
   <a href="#impact">Mission impact</a>
-  <a href="#method">Method</a>
+  <a href="#hypotheses">Hypotheses</a>
   <a href="#investigation">Investigation</a>
   <a href="#defence">Defence by stage</a>
   <a href="#prevent">Don't be next</a>
@@ -27,10 +28,9 @@
 </div></nav>
 
 <header class="hero"><div class="wrap">
-  <div class="kicker">ADF Cyber Skills Challenge 2026 · Day 1 · 23 November</div>
   <h1>From Advisory to Detection: Hunting Integrity Tech (AA26-281A) in Splunk</h1>
   <p class="question">What if this adversary was already inside your environment? <strong>Could your SOC find them before they take your data?</strong></p>
-  <p class="lead">This page has everything from the session: the context, the method, a Splunk app with 18 detections for this adversary, and 388,653 synthetic events to rehearse on. The goal isn't a nice Splunk demo. It's that you run this method against your next advisory, this week.</p>
+  <p class="lead">This page goes with my session. It looks at one advisory, AA26-281A, in some depth, but the main thing to take away is the method: a repeatable way to turn any threat advisory into detections you have tested, and to be clear about what you can't yet see. The Splunk app, the synthetic data and the starter kit are free to download and run in a lab.</p>
   <div class="buttons" id="download">
     <a class="btn primary" href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/releases/latest/download/integrity_tech_detections.tgz">Integrity Tech Detections app<small>18 detections · 10 dashboards · 13 lookups (46 KB)</small></a>
     <a class="btn" href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/releases/latest/download/TA-aa26-281a-lab.tgz">Synthetic lab data add-on<small>388,653 events, the scenario (7.8 MB)</small></a>
@@ -42,6 +42,23 @@
 
 <main>
 
+<section id="method"><div class="wrap">
+  <div class="kicker">The method</div>
+  <h2>From any advisory to a tested detection, in six steps</h2>
+  <p class="lead">AA26-281A is the worked example on this page, but the steps don't depend on the adversary or on the SIEM. Use them on the next advisory that lands on your desk.</p>
+  <div class="path"><span>Threat intelligence</span><i>›</i><span>Adversary behaviour</span><i>›</i><span>Detection hypotheses</span><i>›</i><span>Evidence</span><i>›</i><span>Validated detections</span><i>›</i><span>Defensive action</span></div>
+  <div class="table-wrap"><table>
+    <tr><th>Step</th><th>The question</th><th>What you produce</th><th>In the AA26-281A example</th></tr>
+    <tr><td>1. Threat intelligence</td><td>What does the advisory actually say?</td><td>The behaviours, quoted from the text</td><td>AA26-281A, 8 October 2026</td></tr>
+    <tr><td>2. Adversary behaviour</td><td>What does the adversary have to do?</td><td>A list of behaviours rather than indicators</td><td>Scan, exploit, spray, hide a VPN, take mail</td></tr>
+    <tr><td>3. Detection hypotheses</td><td>If they did it here, what would we see, and in which log?</td><td>One testable sentence per behaviour, mapped to ATT&amp;CK</td><td>Seven hypotheses</td></tr>
+    <tr><td>4. Evidence</td><td>Do we have that data, with the fields we need?</td><td>Proof the fields exist, and a list of gaps</td><td>Seven sources; no replication auditing (4662), no Linux telemetry</td></tr>
+    <tr><td>5. Validated detections</td><td>Does it fire on a safe simulation and stay quiet on the legitimate look-alike?</td><td>Detections with positive and negative tests</td><td>16 of 17 rules fire; DCSync can't be tested</td></tr>
+    <tr><td>6. Defensive action</td><td>Who does what, by when, and who approves?</td><td>Ranked actions, owned gaps and a readiness score</td><td>Eight actions; 3 of 7 behaviours ready</td></tr>
+  </table></div>
+  <p>The starter kit has a playbook, a hypothesis worksheet and a test plan to work through the steps. The <a href="#actions">five actions</a> further down are the short version for this week.</p>
+</div></section>
+
 <section id="five-questions"><div class="wrap">
   <div class="kicker">Start here</div>
   <h2>Could you answer all five today, with evidence?</h2>
@@ -52,21 +69,21 @@
     <div class="card"><p>Would you know your mailboxes were being extracted?</p></div>
     <div class="card"><p>Could you prove which systems were exposed?</p></div>
   </div>
-  <p class="muted">The session runs in three parts: concern (this adversary is real and patient), discovery (a step-by-step investigation of a simulated intrusion) and confidence (a method you can run against the next advisory).</p>
+  <p class="muted">The session has three parts: who this adversary is and why it matters, a step-by-step investigation of a simulated intrusion in a lab, and how to apply the same method to your next advisory.</p>
 </div></section>
 
 <section id="advisory"><div class="wrap">
-  <div class="kicker">The advisory</div>
-  <h2>AA26-281A: Integrity Tech, the outsourced plumbing of espionage</h2>
+  <div class="kicker">Worked example</div>
+  <h2>AA26-281A: Integrity Technology Group</h2>
   <p class="lead">On 8 October 2026, ASD's ACSC, CISA, the FBI, the NSA and partners published AA26-281A about Chinese government-linked actors enabled by Integrity Technology Group. The same day, the FBI seized seven of its domains. The advisory describes a campaign, not a vulnerability: automated scanning, exploitation of old CVEs, password spraying, a VPN hidden on endpoints, theft of Active Directory credentials and bulk theft of email.</p>
 
   <div class="grid g3">
-    <div class="card blue"><h4>A contractor, not a crew</h4><p>A for-profit, publicly identified company with Chinese government contracts. According to court filings it built the scanner, rented access, ran the phishing kit and collected the data. Tracked since 2021 as Flax Typhoon, Ethereal Panda and RedJuliett. Outsourcing blurs attribution, and disruption only removes one supplier.</p></div>
+    <div class="card blue"><h4>A company, not just a hacking group</h4><p>A for-profit, publicly identified company with Chinese government contracts. According to court filings it built the scanner, rented access, ran the phishing kit and collected the data. Tracked since 2021 as Flax Typhoon, Ethereal Panda and RedJuliett. Because the work is outsourced, attribution is harder, and disrupting one company removes only one supplier.</p></div>
     <div class="card blue"><h4>MicroScan: reconnaissance at industrial scale</h4><p>A Python web app with 1,300+ penetration-testing scripts, in use since 2017 and run from a Mirai-variant botnet. It knocks on FTP, SSH, DNS, HTTP(S) and SOCKS (ports 21, 22, 53, 80, 443, 1080) and hunts decade-old CVEs in common products.</p></div>
-    <div class="card blue"><h4>FishHub: the phishing arm</h4><p>Look-alike domains such as <code>outlook3650.com</code>, <code>youtubecard.com</code> and <code>linkedinns.net</code>. About 20 Taiwanese universities were confirmed victims, the DOJ says. The prize is not the click; it is the identity behind it.</p></div>
+    <div class="card blue"><h4>FishHub: the phishing arm</h4><p>Look-alike domains such as <code>outlook3650.com</code>, <code>youtubecard.com</code> and <code>linkedinns.net</code>. About 20 Taiwanese universities were confirmed victims, the DOJ says. The aim is to capture users' sign-in details.</p></div>
   </div>
 
-  <p>Machines find the door; people walk through it. The first three steps are automated (hijack devices, scan everything, catalogue weak points). The last two are hands-on (get in, then stay and take). The hand-over is where detection gets easier: a scanner is noise, but a person has to sign in, install something and move data.</p>
+  <p>The first three steps are automated: hijack devices, scan widely and catalogue weak points. The last two are done by people: getting in, then staying and taking data. That hand-over is where detection gets easier. Scanning is everyday noise, but a person has to sign in, install something and move data, and each of those leaves logs.</p>
 
   <div class="grid g2">
     <div class="card red">
@@ -86,19 +103,19 @@
     </div>
   </div>
 
-  <h3>Legitimate tool, malicious behaviour</h3>
-  <p>Almost all of the toolkit is dual-use: Nmap, Masscan, Dirsearch, SoftEther. You can't detect this adversary by its tools. You can't block SoftEther, but you can catch a VPN pretending to be <code>conhost.exe</code>.</p>
+  <h3>Mostly legitimate tools</h3>
+  <p>Most of the toolkit is dual-use: Nmap, Masscan, Dirsearch, SoftEther. Tool names alone won't find this adversary. SoftEther is a legitimate VPN; what gives it away here is a SoftEther binary renamed to look like <code>conhost.exe</code>.</p>
 
   <h3>Disrupted twice, still in business</h3>
   <p>The botnet was taken down in September 2024 (200,000+ devices, per the DOJ), the company was sanctioned by the US Treasury in January 2025, and seven domains were seized on 8 October 2026. Seizing a domain doesn't evict an actor who is already inside: a hidden VPN and stolen credentials don't need <code>c0cc.cc</code>.</p>
 
-  <div class="callout"><strong>Scanned ≠ breached.</strong> The DOJ and the advisory name organisations that were scanned (a US power company, airports in Poland and Japan, Taiwanese gas and power firms and universities, an NGO), not ones proven compromised. State direction is alleged in court filings and assessed by allied agencies; it is not an adjudicated fact, and Beijing denies it. The advisory does not attribute AI use to these actors.</div>
+  <div class="callout"><strong>Scanned is not breached.</strong> The DOJ and the advisory name organisations that were scanned (a US power company, airports in Poland and Japan, Taiwanese gas and power firms and universities, an NGO), not ones proven compromised. State direction is alleged in court filings and assessed by allied agencies; it is not an adjudicated fact, and Beijing denies it. The advisory does not attribute AI use to these actors.</div>
 </div></section>
 
 <section id="old-cves"><div class="wrap">
-  <div class="kicker">The question everyone asks</div>
+  <div class="kicker">Old vulnerabilities</div>
   <h2>The CVEs are old. Why does this matter now?</h2>
-  <p class="lead">The eight vulnerabilities the advisory says were successfully exploited date from 2014 to 2023. Shellshock is twelve years old. That is the lesson, not a footnote.</p>
+  <p class="lead">The eight vulnerabilities the advisory says were successfully exploited date from 2014 to 2023. Shellshock is twelve years old.</p>
   <div class="table-wrap"><table>
     <tr><th>CVE</th><th>Product</th><th>Age in 2026</th><th>Newly added to CISA KEV with this advisory</th></tr>
     <tr><td class="mono">CVE-2014-6278</td><td>GNU Bash (Shellshock)</td><td>12 years</td><td><span class="chip grey">earlier</span></td></tr>
@@ -111,13 +128,13 @@
     <tr><td class="mono">CVE-2023-22894</td><td>Strapi</td><td>3 years</td><td><span class="chip orange">yes</span></td></tr>
   </table></div>
   <div class="grid g2">
-    <div class="card"><h4>1. Automation makes old cheap</h4><p>MicroScan carries 1,300+ scripts. Trying every old exploit on every internet-facing host costs the actor nothing, so they keep trying.</p></div>
+    <div class="card"><h4>1. Automation makes old exploits cheap to try</h4><p>MicroScan carries 1,300+ scripts. Trying every old exploit on every internet-facing host costs the actor nothing, so they keep trying.</p></div>
     <div class="card"><h4>2. Old systems outlive their patches</h4><p>Edge appliances, FTP and DNS servers drift out of patch cycles, and they are often the boxes that send no logs at all.</p></div>
     <div class="card"><h4>3. Recent, not history</h4><p>Five of the eight were only added to CISA's Known Exploited Vulnerabilities catalogue with this advisory: exploitation was confirmed recently, not a decade ago.</p></div>
     <div class="card"><h4>4. Some never reach a web log</h4><p>A ProFTPD or BIND exploit hits the appliance, not IIS. A log search can't find it; only an inventory can.</p></div>
   </div>
-  <div class="callout"><strong>Probed ≠ exploited.</strong> MicroScan probes a long list of products (OpenSSL, WebLogic, Jenkins, Struts, Juniper ScreenOS and more). The table above is the narrower list the advisory says was successfully exploited.</div>
-  <div class="callout blue"><strong>What it teaches:</strong> not "patch faster" in the abstract. Know what you run, know what faces the internet, and know whether it sends logs. If a contractor can inventory your internet-facing services, so can you.</div>
+  <div class="callout"><strong>Probed is not exploited.</strong> MicroScan probes a long list of products (OpenSSL, WebLogic, Jenkins, Struts, Juniper ScreenOS and more). The table above is the narrower list the advisory says was successfully exploited.</div>
+  <div class="callout blue"><strong>In practice:</strong> know what you run, what faces the internet, and whether it sends logs. If a contractor can list your internet-facing services, you can too.</div>
 </div></section>
 
 <section id="impact"><div class="wrap">
@@ -141,10 +158,9 @@
   <p class="muted">Impacts are the presenter's assessment for a Defence context. Plan for the consequence; don't assume the breach.</p>
 </div></section>
 
-<section id="method"><div class="wrap">
-  <div class="kicker">The method</div>
-  <h2>Intelligence isn't detection: write testable hypotheses</h2>
-  <div class="path"><span>Threat intelligence</span><i>›</i><span>Adversary behaviour</span><i>›</i><span>Detection hypotheses</span><i>›</i><span>Evidence</span><i>›</i><span>Validated detections</span><i>›</i><span>Defensive action</span></div>
+<section id="hypotheses"><div class="wrap">
+  <div class="kicker">Method, step 3</div>
+  <h2>Write testable hypotheses</h2>
   <p>Take each behaviour from the advisory and write a hypothesis: if they did this here, what would we see, and in which log? Every hypothesis needs the evidence it expects, the telemetry that records it, and a test that proves it fires on a safe simulation and stays quiet on the legitimate look-alike.</p>
   <div class="table-wrap"><table>
     <tr><th>Adversary behaviour</th><th>Evidence we expect</th><th>Telemetry</th><th>Validated in the lab</th></tr>
@@ -177,7 +193,7 @@
         <li><strong>2 entities over the threshold:</strong> j.citizen and a.lim. Who are they?</li>
         <li><strong>43% ready:</strong> 3 of 7 behaviours validated. Would you be comfortable telling your commander that?</li>
       </ol>
-      <p class="take">Every number is a question.</p>
+      <p class="take">Treat each number as a question to answer.</p>
     </div>
   </div>
 
@@ -191,7 +207,7 @@
         <li><strong>NO LOGS:</strong> every vulnerable appliance sends nothing to Splunk. That's unknown, not safe.</li>
         <li><strong>One source tried 7 techniques</strong> against WEB01 in two minutes: six advisory CVEs plus XSS. Two XSS requests were answered.</li>
       </ol>
-      <p class="take">Vulnerable, exposed, targeted, exploited: four different states. Report which.</p>
+      <p class="take">Vulnerable, exposed, targeted and exploited are different states. Say which one applies.</p>
     </div>
   </div>
 
@@ -205,7 +221,7 @@
         <li><strong>Then tried the exploits</strong> and sprayed 64 mailboxes across four Exchange interfaces.</li>
         <li><strong>The sign-in that worked:</strong> the IIS log and the Windows 4624 event agree, j.citizen at 11:58:07 from the spray source.</li>
       </ol>
-      <p class="take">Don't stop at the count. Open the event that proves it.</p>
+      <p class="take">Check the underlying event, not just the count.</p>
     </div>
   </div>
 
@@ -268,7 +284,7 @@
       </ol>
       <p>Enterprise Security raises one finding per entity: j.citizen at risk 200 across six tactics, and a.lim (the FishHub victim) at 100.</p>
       <img src="img/es_findings.png" alt="Enterprise Security analyst queue with two findings" loading="lazy" style="margin-top:8px">
-      <p class="take">One intrusion, one finding, one analyst: not six tickets for six people.</p>
+      <p class="take">Correlated, it is one intrusion for one analyst rather than six separate tickets.</p>
     </div>
   </div>
 
@@ -282,17 +298,17 @@
         <li><strong>Two are visibility gaps:</strong> DCSync auditing; edge, Linux and mailbox logging. They get owners and dates.</li>
         <li><strong>Every action carries evidence</strong>, confidence, owner and status, with live risk joined from ES.</li>
       </ol>
-      <p class="take">A finding isn't finished until it has an owner, an action and an approval.</p>
+      <p class="take">A finding needs an owner, an action and an approval before it is done.</p>
     </div>
   </div>
 
-  <div class="callout blue"><strong>What the scenario includes that most demos don't:</strong> the approved scanner, an approved SoftEther client on another workstation, an integration account making 160 EWS calls an hour, an approved backup app that reads every mailbox nightly, and a legitimate <code>Css.js</code> on the web server. A detection that only fires on the attack and stays quiet on these has been tested; one that hasn't seen them hasn't.</div>
+  <div class="callout blue"><strong>Legitimate look-alikes in the data:</strong> the approved scanner, an approved SoftEther client on another workstation, an integration account making 160 EWS calls an hour, an approved backup app that reads every mailbox nightly, and a legitimate <code>Css.js</code> on the web server. A detection that only fires on the attack and stays quiet on these has been tested; one that hasn't seen them hasn't.</div>
 </div></section>
 
 <section id="defence"><div class="wrap">
   <div class="kicker">Prevent it, detect it, prove it</div>
   <h2>Defence by stage</h2>
-  <p>Detection is one column, not the answer. Across the top are the advisory's mitigations; the last column is the honest part: whether we've proven, in the lab, that we would see it.</p>
+  <p>Detection is one column, not the answer. Across the top are the advisory's mitigations; the last column shows whether the lab proved we would see it.</p>
   <div class="table-wrap"><table>
     <tr><th>Stage</th><th>Adversary activity</th><th>Prevent: controls</th><th>What Splunk monitors</th><th>In this lab</th></tr>
     <tr><td>Reconnaissance</td><td>Mass scanning of FTP, SSH, DNS, HTTP(S) and SOCKS</td><td>Attack surface management; close unused ports and services</td><td>Scan patterns by source: direction, baseline, what happened next</td><td><span class="chip green">Detected</span></td></tr>
@@ -308,7 +324,7 @@
   <h3>Detection readiness: what we can prove we would see</h3>
   <div class="grid g2">
     <div class="card"><div class="num">3 ÷ 7 = 43%</div><p>Detection readiness = validated hypotheses ÷ total relevant hypotheses × 100. It's not the same as 16 of 17 rules firing: that tests the logic on a synthetic replay, while this asks whether we'd see each behaviour here. Partial counts as zero, so it's conservative; weighted for impact with partial credit it's 55% (the starter kit has the calculator). It's a proposed operational metric, not a MITRE, ASD or Splunk standard. State the denominator every time you quote it.</p></div>
-    <div class="card orange"><h4>The number isn't the message</h4><p>The message is: we can't see the behaviour that would hand them the whole domain (DCSync), and one audit setting fixes that this week. Measure the outcome, not the activity: technique coverage, telemetry coverage, detection effectiveness, false positives, latency, investigation readiness.</p></div>
+    <div class="card orange"><h4>What to brief</h4><p>The point for a commander: we can't see the behaviour that would hand them the whole domain (DCSync), and one audit setting fixes that this week. Measure the outcome, not the activity: technique coverage, telemetry coverage, detection effectiveness, false positives, latency, investigation readiness.</p></div>
   </div>
   <div class="step">
     <img src="img/itd_readiness.png" alt="Readiness dashboard: status, evidence and owner for each behaviour" loading="lazy">
@@ -444,7 +460,7 @@ python3 labctl.py findings  # raises the two ES findings</code></pre></li>
 </div></section>
 
 <section id="ai"><div class="wrap">
-  <div class="kicker">AI, on both sides</div>
+  <div class="kicker">AI</div>
   <h2>Ask it, then check it</h2>
   <p class="lead">AA26-281A describes automation, not AI. But three independent reports from late 2025 show state actors already using AI to move faster: <a href="https://www.anthropic.com/news/disrupting-AI-espionage">Anthropic</a> (an AI agent ran most of a Chinese state-sponsored espionage campaign), <a href="https://cloud.google.com/blog/topics/threat-intelligence/threat-actor-usage-of-ai-tools">Google's threat intelligence group</a> (PRC-nexus actors using Gemini across the attack lifecycle; APT28 malware querying an LLM in live operations) and <a href="https://openai.com/global-affairs/disrupting-malicious-uses-of-ai-october-2025/">OpenAI</a> (China-aligned operators using ChatGPT for phishing and tooling: faster, not newly capable).</p>
   <h3>A recorded real run against the lab</h3>
@@ -516,10 +532,7 @@ python3 labctl.py findings  # raises the two ES findings</code></pre></li>
 </div></section>
 
 <section class="closing"><div class="wrap">
-  <p>Intelligence is not protection.</p>
-  <p>Visibility is not detection.</p>
-  <p>Detection is not defence until it is validated.</p>
-  <p class="small">The next threat advisory is not a question of if. It is whether your SOC is ready to act on it.</p>
+  <p class="small">The method in one line: read the advisory, pick a behaviour, prove you have the data, build and test a detection, and give every gap an owner. Then do it again with the next advisory.</p>
 </div></section>
 
 </main>
