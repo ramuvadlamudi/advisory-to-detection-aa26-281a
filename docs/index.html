@@ -18,6 +18,7 @@
   <a href="#method">Method</a>
   <a href="#investigation">Investigation</a>
   <a href="#defence">Defence by stage</a>
+  <a href="#prevent">Don't be next</a>
   <a href="#use">Use the app</a>
   <a href="#catalogue">Detections</a>
   <a href="#actions">Five actions</a>
@@ -161,7 +162,7 @@
 
 <section id="investigation"><div class="wrap">
   <div class="kicker">The investigation · lab screenshots, synthetic data</div>
-  <h2>8 October, 09:00. The advisory lands. Brief the commander by 16:00.</h2>
+  <h2>Replay clock, 8 October 09:00: the advisory lands. Brief the commander by 16:00.</h2>
   <p class="lead">This is the guided walkthrough from the session, in eight steps. Every screen is from the Integrity Tech Detections app running on the synthetic data you can download above, so you can reproduce each one.</p>
 
   <div class="step">
@@ -170,7 +171,7 @@
       <div class="label">Step 1 of 8 · Overview</div>
       <h3>What does our environment already know?</h3>
       <ol>
-        <li><strong>16 of 17 detections fired</strong> on the simulated intrusion. The silent one is DCSync: a telemetry gap, not a pass.</li>
+        <li><strong>16 of 17 detection rules fired</strong> on the simulated intrusion (17 behaviour rules covering seven behaviours, plus one correlation finding). The silent one is DCSync: a telemetry gap, not a pass.</li>
         <li><strong>2 entities over the threshold:</strong> j.citizen and a.lim. Who are they?</li>
         <li><strong>43% ready:</strong> 3 of 7 behaviours validated. Would you be comfortable telling your commander that?</li>
       </ol>
@@ -275,7 +276,7 @@
       <div class="label">Step 8 of 8 · Defender action centre</div>
       <h3>What do we do, who owns it, and who must approve?</h3>
       <ol>
-        <li><strong>Six of eight actions need approval:</strong> account, isolation and notification. Detection proposes; people decide.</li>
+        <li><strong>A workflow, not automation:</strong> backed by editable lookups, not an automated response engine. Six of eight actions need a named approver. Detection proposes; people decide.</li>
         <li><strong>Two are visibility gaps:</strong> DCSync auditing; edge, Linux and mailbox logging. They get owners and dates.</li>
         <li><strong>Every action carries evidence</strong>, confidence, owner and status, with live risk joined from ES.</li>
       </ol>
@@ -304,12 +305,38 @@
 
   <h3>Detection readiness: what we can prove we would see</h3>
   <div class="grid g2">
-    <div class="card"><div class="num">3 ÷ 7 = 43%</div><p>Detection readiness = validated hypotheses ÷ total relevant hypotheses × 100. Partial counts as zero, so it's conservative; weighted for impact with partial credit it's 55% (the starter kit has the calculator). It's a proposed operational metric, not a MITRE, ASD or Splunk standard. State the denominator every time you quote it.</p></div>
+    <div class="card"><div class="num">3 ÷ 7 = 43%</div><p>Detection readiness = validated hypotheses ÷ total relevant hypotheses × 100. It's not the same as 16 of 17 rules firing: that tests the logic on a synthetic replay, while this asks whether we'd see each behaviour here. Partial counts as zero, so it's conservative; weighted for impact with partial credit it's 55% (the starter kit has the calculator). It's a proposed operational metric, not a MITRE, ASD or Splunk standard. State the denominator every time you quote it.</p></div>
     <div class="card orange"><h4>The number isn't the message</h4><p>The message is: we can't see the behaviour that would hand them the whole domain (DCSync), and one audit setting fixes that this week. Measure the outcome, not the activity: technique coverage, telemetry coverage, detection effectiveness, false positives, latency, investigation readiness.</p></div>
   </div>
   <div class="step">
     <img src="img/itd_readiness.png" alt="Readiness dashboard: status, evidence and owner for each behaviour" loading="lazy">
     <div><div class="label">Readiness dashboard</div><p>Each behaviour with its status, the telemetry behind it, the reason, and an owner. Swap in your own register and this becomes your own score and your own gap list.</p></div>
+  </div>
+</div></section>
+
+<section id="prevent"><div class="wrap">
+  <div class="kicker">Don't be next</div>
+  <h2>How to avoid being compromised by this adversary</h2>
+  <p class="lead">Close the doors it uses, in order of urgency. Every control maps to the advisory's mitigations: reduce the surface, harden applications, protect identity, and keep the visibility to prove it worked. Test every change in a lab first.</p>
+  <div class="grid g3">
+    <div class="card red"><h4>This week: close the open doors</h4><ul>
+      <li><strong>Hunt before you patch.</strong> Patching doesn't evict an actor who is already inside.</li>
+      <li><strong>Patch or isolate the eight CVEs</strong>, internet-facing systems first, within KEV deadlines.</li>
+      <li><strong>Phishing-resistant MFA</strong> on every Exchange protocol; disable legacy authentication.</li>
+      <li><strong>Turn on the missing audit:</strong> 4662 with the replication SACL, and MailItemsAccessed on every mailbox.</li>
+    </ul></div>
+    <div class="card orange"><h4>This month: shrink and harden</h4><ul>
+      <li><strong>Shrink the internet surface:</strong> close FTP, SSH, DNS and SOCKS services you don't need.</li>
+      <li><strong>Application control:</strong> no unapproved VPN or binaries running from ProgramData.</li>
+      <li><strong>Govern app consent:</strong> review apps with Mail.Read; rotate app secrets.</li>
+      <li><strong>Filter look-alike domains</strong>, and make it easy for users to report them.</li>
+    </ul></div>
+    <div class="card green"><h4>This quarter: make it structural</h4><ul>
+      <li><strong>Retire end-of-life edge devices</strong>, or at least forward their logs.</li>
+      <li><strong>Tier admin accounts:</strong> only domain controllers replicate; PAM for administrators.</li>
+      <li><strong>Filter egress:</strong> allow-list outbound; block dynamic DNS unless approved.</li>
+      <li><strong>Re-test every quarter:</strong> replay the simulation and check readiness.</li>
+    </ul></div>
   </div>
 </div></section>
 
@@ -321,7 +348,7 @@
     <div class="card blue"><h4>Day 1 · in a lab, never production</h4><ul>
       <li>Install the data add-on (388,653 synthetic events) and the Integrity Tech Detections app.</li>
       <li>Walk the storyline: the screens on this page.</li>
-      <li>Backtest: 16 of 17 behaviours fire; DCSync is the gap.</li>
+      <li>Backtest: 16 of 17 detection rules fire; DCSync is the gap.</li>
       <li>Use it to train analysts on a real adversary's tradecraft without touching real systems.</li>
     </ul></div>
     <div class="card orange"><h4>Week 1 · in your environment</h4><ul>

@@ -16,12 +16,12 @@ The audience should feel three things, in order:
 
 | Part | Slides | Minutes | What they should feel |
 |---|---|---|---|
-| Concern | 2 to 13 | 17.5 | The adversary is real, patient and aimed at organisations like theirs; what telemetry it takes to see it |
+| Concern | 2 to 13 | 17 | The adversary is real, patient and aimed at organisations like theirs; what telemetry it takes to see it |
 | Discovery | 14 to 22 | 15.5 | An analyst can find this intrusion, step by step, with evidence |
-| Confidence | 23 to 29 | 11.5 | They can run the same method on their next advisory, this week |
+| Confidence | 23 to 30 | 12 | How to avoid being the next victim, and how to run the same method on their next advisory, this week |
 
 The slide notes add up to 44.5 minutes. Don't rush slides 3 to 10; spend the most time on 14 to 22; make slide 18 a real
-show of hands and slide 21 the climax; finish on the 48-hour challenge (slide 28).
+show of hands and slide 21 the climax; finish on the 48-hour challenge (slide 29).
 
 The opening question is the spine: "What if this adversary was already inside your environment? Could your SOC find them before
 they take your data?" The storyline slide (21) answers it: partly, and late.
@@ -38,7 +38,7 @@ they take your data?" The storyline slide (21) answers it: partly, and late.
 
 | Slide | Clock | Screenshot | The analyst's question | Callouts | Detail slide |
 |---|---|---|---|---|---|
-| 14 | 00:00 | `itd_overview` | What does our environment already know? | 16 of 17 behaviours fired (18 detections = 17 behaviours + 1 correlation finding); 2 entities over threshold; 43% ready ("would you brief your commander on that?") | Operationalise |
+| 14 | 00:00 | `itd_overview` | What does our environment already know? | 16 of 17 detection rules fired (17 behaviour rules covering 7 behaviours, plus 1 correlation finding); say the title's time is the replay clock; 2 entities over threshold; 43% ready ("would you brief your commander on that?") | Operationalise |
 | 15 | 01:30 | `itd_exposure` (top) | Are we exposed, and would we see it? | 5 of 8 CVEs on our assets; NO LOGS; one source tried 7 techniques | Exploit attempts; Vulnerable is not exploited |
 | 16 | 03:00 | `itd_recon` | Who scanned us, what did they try, did anyone get in? | Scanned then signed in; exploit sweep; the IIS and 4624 events for j.citizen at 11:58:07 | Password spraying; Reconnaissance |
 | 17 | 05:30 | `itd_persistence` | Stolen password, or still inside? | conhost.exe is vpnbridge.exe; three signals; hourly tunnel | SoftEther ① to ③ |
@@ -46,9 +46,9 @@ they take your data?" The storyline slide (21) answers it: partly, and late.
 | 19 | 09:00 | none | The answer is C | Why not A, B, D (premature isolation can disrupt evidence collection; follow the IR process); what correlating found; then a person decides | SoftEther ③ |
 | 20 | 10:00 | `itd_collection` | What did they take, and how do we know? | 2,400 EWS calls; the secret added at 22:10:37; seven mailboxes read, event by event | Mail collection |
 | 21 | 11:30 | `itd_storyline` + `es_findings` | Six separate incidents, or one intrusion? | First signal 28 Sep 09:12, 9 days 22 hours before the advisory; 7 detections; DCSync can't be seen; one finding per entity | Correlate; Risk; analyst's view |
-| 22 | 14:00 | `itd_response` (top) | What do we do, who owns it, who approves? | A workflow, not automated containment: 6 of 8 need approval; 2 visibility gaps; evidence on every row | |
+| 22 | 14:00 | `itd_response` (top) | What do we do, who owns it, who approves? | A workflow backed by editable lookups, not an automated response engine: 6 of 8 need approval; 2 visibility gaps; evidence on every row | |
 
-Slide 13 (minimum telemetry) sets up the investigation: seven sources plus context, with the lab's gaps. Slide 23 (defence by stage) is the same table as the bottom of the action centre, drawn natively. The detail section keeps the
+Slide 13 (minimum telemetry) sets up the investigation: seven sources plus context, with the lab's gaps. Slide 24 (don't be next) turns the mitigations into this week, this month and this quarter. Slide 23 (defence by stage) is the same table as the bottom of the action centre, drawn natively. The detail section keeps the
 readiness screenshot (`itd_readiness`) and the analyst queue with the investigate dashboard (`es_findings`, `itd_investigate`).
 
 Not used on slides: `itd_detections`, `search_recon`, `search_softether`, `search_ews`, `search_dcsync`, `search_ai_draft`,
@@ -68,7 +68,7 @@ contradicts "no Linux telemetry".
 
 2. Open the PDF on the presentation laptop and check the screenshots are legible on the venue projector. Nothing on stage
    needs the network.
-3. Check the QR code on slide 28 opens the session page on a phone.
+3. Check the QR code on slide 29 opens the session page on a phone.
 
 ## Refreshing the screenshots
 
@@ -130,6 +130,13 @@ Only needed if the lab, the dashboards or the dates change.
 - **Why is 203.0.113.47 not a finding?** It scores 90 across three tactics (the scan, the exploit attempts, the spray and
   the sign-in), just under the threshold of 100. Its activity reaches j.citizen because the same source then signed in as her.
 - **Is the readiness metric a standard?** No. It is the presenter's proposed operational metric; always state the denominator.
+- **16 of 17, or 43%?** Different questions. 16 of 17 detection rules fired in a synthetic replay: the logic works on data
+  where we know the answer. 3 of 7 behaviours have full telemetry and validated coverage: whether we would see each behaviour
+  in this environment. Only the second goes to the commander.
+- **How do we avoid being compromised?** This week: hunt before you patch, patch or isolate the eight CVEs, enforce
+  phishing-resistant MFA on every Exchange protocol, and turn on 4662 replication auditing and MailItemsAccessed. This month:
+  shrink the internet surface, application control, govern app consent, filter look-alike domains. This quarter: retire
+  end-of-life edge devices, tier admin accounts, filter egress, and re-test every quarter.
 - **Does this need ES?** The hunts are plain SPL on CIM data models; risk aggregation and findings need ES.
 - **Does it work on a disconnected network?** Yes. Everything ships as files (two app packages, CSV lookups, synthetic data);
   nothing calls out at run time. Updates come across through the normal import process and are tested on a lab copy first.
