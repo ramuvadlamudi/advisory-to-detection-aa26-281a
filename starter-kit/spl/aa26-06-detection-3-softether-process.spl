@@ -1,0 +1,12 @@
+``` AA26 06 - Detection 3 - SoftEther process: Detection 3: a VPN bridge pretending to be Windows ```
+| tstats count min(_time) as first_seen
+    values(Processes.process_path) as path
+    values(Processes.parent_process_name) as parent
+    from datamodel=Endpoint.Processes
+    where (Processes.process_name IN ("conhost.exe","dllhost.exe")
+      NOT Processes.process_path IN ("C:\\Windows\\System32\\*",
+                                     "C:\\Windows\\SysWOW64\\*"))
+      OR Processes.original_file_name IN ("vpnclient*","vpnbridge*")
+    by Processes.dest Processes.process_name
+       Processes.original_file_name Processes.process_hash
+| convert ctime(first_seen)

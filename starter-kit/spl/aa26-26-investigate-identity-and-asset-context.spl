@@ -1,0 +1,7 @@
+``` AA26 26 - Investigate - Identity and asset context: Investigation: who and what is at risk? ```
+| inputlookup aa26_lab_identities.csv
+| search identity IN ("j.citizen","a.lim")
+| lookup aa26_lab_assets host AS workstation
+    OUTPUT ip priority AS host_priority
+| table identity display title department workstation ip
+    priority host_priority

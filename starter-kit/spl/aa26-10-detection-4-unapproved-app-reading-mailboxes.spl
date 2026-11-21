@@ -1,0 +1,5 @@
+``` AA26 10 - Detection 4 - Unapproved app reading mailboxes: Detection 4: unapproved app reading many mailboxes ```
+index=o365 Operation=MailItemsAccessed
+| stats dc(MailboxOwnerUPN) as mailboxes count by AppId
+| lookup approved_mail_apps AppId OUTPUT owner
+| where mailboxes>=5 AND isnull(owner)

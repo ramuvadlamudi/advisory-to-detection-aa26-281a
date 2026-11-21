@@ -1,0 +1,7 @@
+``` AA26 18 - A4 - Indicator sweep: Sweep the advisory's domains across retention ```
+| tstats count from datamodel=Network_Resolution
+    by DNS.src DNS.query
+| lookup aa26_281a_domains domain AS DNS.query
+    OUTPUT ioc_source confidence last_seen expires
+| where isnotnull(ioc_source) AND confidence!="invalid"
+    AND strptime(expires,"%Y-%m-%d")>now()

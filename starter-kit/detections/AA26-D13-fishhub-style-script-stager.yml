@@ -1,0 +1,32 @@
+# AA26-D13: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D13"
+name: "AA26-281A - FishHub-style script stager - Rule"
+behaviour: "FishHub phishing stager: a .vbe saved to %temp% and run by a script host"
+description: "A script host or PowerShell handles a .vbe file in a temp folder, the pattern of the FishHub downloader in the 8 Oct 2026 seizure affidavit."
+mitre_attack:
+  - "T1566.001"
+  - "T1059.005"
+  - "T1105"
+data_sources: "Sysmon event 1 or EDR: dest, user, parent_process_name, process_name, process (command line)"
+cim: "Endpoint.Processes"
+prerequisites: "None beyond the data sources"
+search: |
+  | tstats count min(_time) as first_seen values(Processes.process) as process from datamodel=Endpoint.Processes where Processes.process_name IN ("wscript.exe","cscript.exe","powershell.exe") Processes.process="*temp*.vbe*" by Processes.dest Processes.user Processes.parent_process_name Processes.process_name
+  | rename Processes.* as *
+  | eval dest=upper(mvindex(split(dest,"."),0))
+  | eval user=mvindex(split(user,"\\"),-1)
+schedule: "15 * * * *"
+search_window: "-70m@m to -10m@m"
+severity: "high"
+risk: "dest (system) +40, user (user) +40"
+false_positives:
+  - "Rare: legacy logon scripts that use .vbe from temp folders"
+tuning:
+  - "Allow-list by exact script hash and parent, never by folder"
+tests:
+  positive: "Outlook > PowerShell > .vbe in %temp% > wscript on WS-0458 fires (2 rows)"
+  negative: "PowerShell without a .vbe in temp stays silent"
+owner: "SOC Detection Engineering (Endpoint)"
+review_date: "2027-02-23"
+response: "Isolate the host with approval, block the stager domain, and check for collection and upload from the same host."
+lab_backtest_rows: 2

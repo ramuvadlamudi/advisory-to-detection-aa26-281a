@@ -1,0 +1,16 @@
+``` AA26 22 - SoftEther - Evidence correlated by host: SoftEther: process, service and DNS evidence on one host ```
+| tstats count from datamodel=Endpoint.Processes
+    where Processes.original_file_name IN ("vpnclient*","vpnbridge*")
+    by Processes.dest
+| eval host=upper(mvindex(split('Processes.dest',"."),0)),
+    signal="process: SoftEther metadata"
+| append [search `wineventlog_system` EventCode=7045
+    NOT ImagePath IN ("*\\Windows\\System32\\*","*\\Program Files*")
+  | eval host=upper(mvindex(split(Computer,"."),0)),
+      signal="service: autostart outside system paths"]
+| append [| tstats count from datamodel=Network_Resolution
+    where DNS.query IN ("*.softether.net","*.vpnazure.net") by DNS.src
+  | lookup aa26_lab_assets ip AS DNS.src OUTPUT host
+  | eval signal="dns: SoftEther dynamic DNS"]
+| stats dc(signal) as signals values(signal) as evidence by host
+| sort - signals

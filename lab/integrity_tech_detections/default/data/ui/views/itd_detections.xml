@@ -1,0 +1,219 @@
+<dashboard version="2" theme="dark">
+  <label>Detection library</label>
+  <description>Every Integrity Tech detection in this app: what it looks for, the data it needs, and how it did in the lab.</description>
+  <definition><![CDATA[
+{
+  "title": "Detection library",
+  "description": "Every Integrity Tech detection in this app: what it looks for, the data it needs, and how it did in the lab.",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#02C8FF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "17 behaviour detections and 1 finding"
+      },
+      "title": "Detections",
+      "dataSources": {
+        "primary": "ds_1"
+      }
+    },
+    "viz_2": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#02C8FF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "ATT&CK techniques",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#02C8FF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "Data sources",
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#45991F",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "Fire on the simulated intrusion",
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.table",
+      "options": {
+        "count": 20,
+        "columnFormat": {
+          "lab_result": {
+            "data": "> table | seriesByName(\"lab_result\") | formatByType(lab_resultFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"lab_result\") | matchValue(lab_resultColors)",
+            "rowColors": "> table | seriesByName(\"lab_result\") | matchValue(lab_resultColorsText)"
+          }
+        }
+      },
+      "title": "Detections, in attack-chain order",
+      "context": {
+        "lab_resultColors": [
+          {
+            "match": "silent: telemetry gap",
+            "value": "#EB4651"
+          }
+        ],
+        "lab_resultColorsText": [
+          {
+            "match": "silent: telemetry gap",
+            "value": "#FFFFFF"
+          }
+        ],
+        "lab_resultFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "Detections",
+      "options": {
+        "query": "| inputlookup itd_detection_catalog.csv | stats count"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "ATT&CK techniques",
+      "options": {
+        "query": "| inputlookup itd_detection_catalog.csv | makemv delim=\" \" mitre | mvexpand mitre | stats dc(mitre)"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Data sources",
+      "options": {
+        "query": "| inputlookup itd_detection_catalog.csv | where type=\"Detection\" | stats dc(data_source)"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "Fire on the simulated intrusion",
+      "options": {
+        "query": "| inputlookup itd_detection_catalog.csv | where type=\"Detection\" | stats count(eval(lab_rows>0)) as fired count as total | eval value=fired.\" of \".total | fields value"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "Detections, in attack-chain order",
+      "options": {
+        "query": "| inputlookup itd_detection_catalog.csv | join type=left rule [| rest splunk_server=local /servicesNS/-/integrity_tech_detections/saved/searches | search eai:acl.app=integrity_tech_detections | rename title as rule | eval state=if(disabled=1,\"disabled\",\"scheduled\") | table rule state cron_schedule] | eval schedule=case(type=\"Finding\",\"hourly, 7-day window\", match(cron_schedule,\"^\\*/30\"),\"every 30 min\", true(),\"hourly\") | eval lab_result=case(type=\"Finding\",\"raises the finding\", lab_rows>0,\"fires (\".lab_rows.\" rows)\", true(),\"silent: telemetry gap\") | table order stage detection mitre data_source risk schedule state lab_result | sort order | fields - order"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 980
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 360,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 720,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 1080,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 160,
+          "w": 1440,
+          "h": 800
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

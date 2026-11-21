@@ -1,0 +1,283 @@
+<dashboard version="2" theme="dark">
+  <label>Incident storyline</label>
+  <description>Six quiet detections, or one intrusion? Everything linked to one identity, its workstation and the addresses that used it, in order.</description>
+  <definition><![CDATA[
+{
+  "title": "Incident storyline",
+  "description": "Six quiet detections, or one intrusion? Everything linked to one identity, its workstation and the addresses that used it, in order.",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    },
+    "input_entity": {
+      "type": "input.text",
+      "title": "Identity",
+      "options": {
+        "token": "entity",
+        "defaultValue": "j.citizen"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#FFFFFF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "the first detection that touched this chain"
+      },
+      "title": "First signal",
+      "dataSources": {
+        "primary": "ds_1"
+      }
+    },
+    "viz_2": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#EB4651",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "from first signal to the end of the time range"
+      },
+      "title": "Inside before the advisory",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#02C8FF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "each quiet on its own"
+      },
+      "title": "Detections in the chain",
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#EB4651",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "DCSync: no 4662 telemetry"
+      },
+      "title": "Behaviours we cannot see",
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.table",
+      "options": {
+        "count": 15,
+        "columnFormat": {
+          "status": {
+            "data": "> table | seriesByName(\"status\") | formatByType(statusFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"status\") | matchValue(statusColors)",
+            "rowColors": "> table | seriesByName(\"status\") | matchValue(statusColorsText)",
+            "width": 110
+          },
+          "time": {
+            "width": 110
+          },
+          "stage": {
+            "width": 140
+          },
+          "what": {
+            "width": 560
+          },
+          "entity": {
+            "width": 200
+          },
+          "evidence": {
+            "width": 150
+          },
+          "detection": {
+            "width": 170
+          }
+        }
+      },
+      "title": "What happened, in order",
+      "context": {
+        "statusColors": [
+          {
+            "match": "detected",
+            "value": "#45991F"
+          },
+          {
+            "match": "evidence only",
+            "value": "#FF9000"
+          },
+          {
+            "match": "GAP",
+            "value": "#EB4651"
+          }
+        ],
+        "statusColorsText": [
+          {
+            "match": "detected",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "evidence only",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "GAP",
+            "value": "#FFFFFF"
+          }
+        ],
+        "statusFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    },
+    "viz_6": {
+      "type": "splunk.markdown",
+      "options": {
+        "markdown": "### Six separate alerts, or one intrusion?\n- **What we know (in this lab):** one external source scanned us, tried old exploits, sprayed 64 mailboxes and got into j.citizen's. Her workstation then ran a disguised VPN, and her mailbox was read in bulk from a second address.\n- **What we don't know yet:** how the payload reached WS-0417, whether domain credentials were taken (DCSync is invisible here), and what the seven mailboxes held.\n- **What needs approval:** disabling the account, isolating WS-0417, removing the app. Next: the [Defender action centre](/app/integrity_tech_detections/itd_response).",
+        "fontColor": "#B4B9C0"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "First signal",
+      "options": {
+        "query": "index=risk source=\"AA26-281A - *\" ([| inputlookup aa26_lab_identities.csv | search identity=\"$entity$\" | eval risk_object=mvappend(identity, workstation) | mvexpand risk_object | fields risk_object] OR [search index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" threat_object_type=ip_address | stats count by threat_object | rename threat_object as risk_object | fields risk_object] OR risk_object=\"$entity$\") | stats min(_time) as t | eval t=strftime(t,\"%d %b %H:%M\") | fields t"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "Inside before the advisory",
+      "options": {
+        "query": "index=risk source=\"AA26-281A - *\" ([| inputlookup aa26_lab_identities.csv | search identity=\"$entity$\" | eval risk_object=mvappend(identity, workstation) | mvexpand risk_object | fields risk_object] OR [search index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" threat_object_type=ip_address | stats count by threat_object | rename threat_object as risk_object | fields risk_object] OR risk_object=\"$entity$\") | stats min(_time) as first | addinfo | eval d=info_max_time-first | eval value=floor(d/86400).\" days \".floor((d%86400)/3600).\" h\" | fields value"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Detections in the chain",
+      "options": {
+        "query": "index=risk source=\"AA26-281A - *\" ([| inputlookup aa26_lab_identities.csv | search identity=\"$entity$\" | eval risk_object=mvappend(identity, workstation) | mvexpand risk_object | fields risk_object] OR [search index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" threat_object_type=ip_address | stats count by threat_object | rename threat_object as risk_object | fields risk_object] OR risk_object=\"$entity$\") | stats dc(source)"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "Behaviours we cannot see",
+      "options": {
+        "query": "| inputlookup itd_readiness.csv | where status=\"Missing\" | stats count"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "What happened, in order",
+      "options": {
+        "query": "index=risk source=\"AA26-281A - *\" ([| inputlookup aa26_lab_identities.csv | search identity=\"$entity$\" | eval risk_object=mvappend(identity, workstation) | mvexpand risk_object | fields risk_object] OR [search index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" threat_object_type=ip_address | stats count by threat_object | rename threat_object as risk_object | fields risk_object] OR risk_object=\"$entity$\")| eval detection=replace(source,\"^AA26-281A - (.*) - Rule$\",\"\\1\")\n| stats min(_time) as _time values(risk_object) as entities earliest(risk_message) as what by detection\n| lookup itd_detection_catalog detection OUTPUT stage\n| eval evidence=\"risk event\", status=\"detected\"\n| append [search index=sysmon EventCode=11 TargetFilename=\"*live700*\"\n    [| inputlookup aa26_lab_identities.csv | search identity=\"$entity$\" | eval Computer=workstation.\"*\" | fields Computer]\n    | stats min(_time) as _time by Computer\n    | eval Computer=upper(mvindex(split(Computer,\".\"),0)),\n        stage=\"Execution\", what=\"The advisory's fake-login payload live700_v1.exe is saved on \".Computer.\", then drops DiagTrack.exe\",\n        entities=Computer, evidence=\"Sysmon file create\", status=\"evidence only\", detection=\"none (hunt: AA26 19)\"]\n| append [search `aa26_o365` Operation=\"Add service principal credentials*\" UserId=\"$entity$@*\"\n    | stats min(_time) as _time values(ObjectId) as app values(ClientIP) as ip by UserId\n    | eval stage=\"Persistence\", what=\"A secret is added to an app this identity owns, from \".ip, entities=UserId,\n        evidence=\"Microsoft 365 audit\", status=\"detected\", detection=\"New app secret or consent\"]\n| append [search `aa26_o365` Operation=MailItemsAccessed [search `aa26_o365` Operation=\"Add service principal credentials*\" UserId=\"$entity$@*\" | stats count by ObjectId | rename ObjectId as AppId | fields AppId]\n    | stats min(_time) as _time dc(MailboxOwnerUPN) as n by AppId\n    | eval stage=\"Collection\", what=\"That app reads \".n.\" mailboxes\", entities=AppId, evidence=\"Microsoft 365 audit\",\n        status=\"detected\", detection=\"Unapproved app reading many mailboxes\"]\n| append [| makeresults | eval _time=null(), stage=\"Credential access\", entities=\"DC01, DC02\", evidence=\"none\",\n    what=\"DCSync cannot be seen: no 4662 events, because the replication audit SACL was never set\", status=\"GAP\", detection=\"DCSync by non-machine account\"]\n| eval time=if(isnull(_time),\"unknown\",strftime(_time,\"%d %b %H:%M\")), entity=mvjoin(entities,\", \"), k=if(isnull(_time),1,0)\n| sort k _time\n| table time stage what entity evidence detection status"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 960
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 360,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 720,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 1080,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 140,
+          "w": 1440,
+          "h": 640
+        }
+      },
+      {
+        "item": "viz_6",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 790,
+          "w": 1440,
+          "h": 150
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time",
+      "input_entity"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

@@ -1,0 +1,4 @@
+``` AA26 24 - Investigate - Risk events for j.citizen: Investigation: every risk event behind the finding ```
+index=risk risk_object="j.citizen"
+| table _time source risk_score risk_message threat_object
+| sort _time

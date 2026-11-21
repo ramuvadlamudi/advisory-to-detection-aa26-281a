@@ -1,0 +1,30 @@
+# AA26-D04: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D04"
+name: "AA26-281A - Web enumeration burst - Rule"
+behaviour: "dirsearch-style enumeration of .php and .asp pages"
+description: "Two hundred or more distinct missing .php/.asp paths from one client in ten minutes (dirsearch-style enumeration)."
+mitre_attack:
+  - "T1595.003"
+data_sources: "Web server or WAF logs: src, uri_path, status, http_user_agent"
+cim: "Web"
+prerequisites: "None beyond the data sources"
+search: |
+  | tstats dc(Web.uri_path) as paths from datamodel=Web where Web.status=404 (Web.uri_path="*.php" OR Web.uri_path="*.asp*") by Web.src Web.http_user_agent _time span=10m
+  | rename Web.src as src Web.http_user_agent as http_user_agent
+  | where paths>=200
+schedule: "*/30 * * * *"
+search_window: "-70m@m to -10m@m"
+severity: "low"
+risk: "src (system) +10"
+false_positives:
+  - "Authorised web application scans and penetration tests"
+tuning:
+  - "Allow-list scheduled scanners by source and window"
+  - "Raise the path threshold for very large sites"
+tests:
+  positive: "203.0.113.47's 450 missing script paths in ten minutes fire once"
+  negative: "Normal 404s from broken links stay silent"
+owner: "SOC Detection Engineering (Network)"
+review_date: "2027-02-23"
+response: "Score only. Correlate with exploitation attempts against the same server."
+lab_backtest_rows: 1

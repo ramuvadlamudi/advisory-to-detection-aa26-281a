@@ -1,0 +1,10 @@
+``` AA26 20 - Detection 5 - FishHub-style stager: Detection 5: a script stager dropped into %temp% ```
+| tstats count min(_time) as first_seen
+    values(Processes.process) as command
+    from datamodel=Endpoint.Processes
+    where Processes.process_name IN ("wscript.exe",
+      "cscript.exe","powershell.exe")
+      Processes.process="*temp*.vbe*"
+    by Processes.dest Processes.user
+       Processes.parent_process_name Processes.process_name
+| convert ctime(first_seen)

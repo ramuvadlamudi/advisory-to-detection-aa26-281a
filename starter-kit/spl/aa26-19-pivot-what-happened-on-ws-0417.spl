@@ -1,0 +1,5 @@
+``` AA26 19 - Pivot - What happened on WS-0417: Pivot: how did SoftEther get onto WS-0417? ```
+`sysmon` Computer="WS-0417*" EventCode IN (1,11)
+| eval detail=coalesce(TargetFilename, OriginalFileName)
+| table _time EventCode Image ParentImage detail CommandLine
+| sort _time

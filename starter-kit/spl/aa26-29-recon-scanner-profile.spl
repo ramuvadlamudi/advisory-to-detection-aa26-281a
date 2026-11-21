@@ -1,0 +1,20 @@
+``` AA26 29 - Recon - Scanner profile: Who is scanning: direction, baseline and what they did next ```
+| tstats dc(All_Traffic.dest) as hosts dc(All_Traffic.dest_port) as ports
+    from datamodel=Network_Traffic
+    where All_Traffic.dest_port IN (21,22,53,80,443,1080)
+    by All_Traffic.src _time span=1h
+| rename All_Traffic.src as src
+| where hosts>=25
+| stats max(hosts) as hosts max(ports) as ports count as scan_hours
+    dc(eval(strftime(_time,"%Y-%m-%d"))) as scan_days min(_time) as first_scan by src
+| eval direction=if(cidrmatch("10.0.0.0/8",src),"internal","external")
+| lookup aa26_approved_scanners src OUTPUT reason as approved
+| join type=left src
+    [search `aa26_iis` sc_status=200 cs_username=* cs_username!="-"
+     | stats dc(cs_username) as signed_in_as by c_ip | rename c_ip as src]
+| fillnull value=0 signed_in_as
+| eval verdict=case(isnotnull(approved),"approved scanner",
+    signed_in_as>0,"scanned, then signed in",
+    true(),"background scanning")
+| eval first_scan=strftime(first_scan,"%d %b %H:%M")
+| table src direction hosts ports scan_days first_scan signed_in_as verdict

@@ -1,0 +1,8 @@
+``` AA26 04 - Detection 2 - Network scanning: Detection 2: scanning on the advisory's ports ```
+| tstats dc(All_Traffic.dest) as hosts
+    dc(All_Traffic.dest_port) as ports
+    from datamodel=Network_Traffic
+    where All_Traffic.dest_port IN (21,22,53,80,443,1080)
+    by All_Traffic.src _time span=1h
+| where hosts>=25
+| sort - hosts

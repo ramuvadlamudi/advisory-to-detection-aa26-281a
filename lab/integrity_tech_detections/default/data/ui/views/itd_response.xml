@@ -1,0 +1,370 @@
+<dashboard version="2" theme="dark">
+  <label>Defender action centre</label>
+  <description>What the investigation turns into: prioritised actions with evidence, owner and approval, and the controls that stop each stage.</description>
+  <definition><![CDATA[
+{
+  "title": "Defender action centre",
+  "description": "What the investigation turns into: prioritised actions with evidence, owner and approval, and the controls that stop each stage.",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#FF9000",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "Actions open",
+      "dataSources": {
+        "primary": "ds_1"
+      }
+    },
+    "viz_2": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#EB4651",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "detection proposes; people decide"
+      },
+      "title": "Need human approval",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#EB4651",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "from the risk index, now"
+      },
+      "title": "Highest live risk",
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#EB4651",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "telemetry we need before we can detect"
+      },
+      "title": "Visibility gaps to close",
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "confidence": {
+            "data": "> table | seriesByName(\"confidence\") | formatByType(confidenceFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"confidence\") | matchValue(confidenceColors)",
+            "rowColors": "> table | seriesByName(\"confidence\") | matchValue(confidenceColorsText)",
+            "width": 100
+          },
+          "status": {
+            "data": "> table | seriesByName(\"status\") | formatByType(statusFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"status\") | matchValue(statusColors)",
+            "rowColors": "> table | seriesByName(\"status\") | matchValue(statusColorsText)",
+            "width": 80
+          },
+          "priority": {
+            "width": 70
+          },
+          "finding": {
+            "width": 160
+          },
+          "entity": {
+            "width": 140
+          },
+          "risk": {
+            "width": 60
+          },
+          "evidence": {
+            "width": 270
+          },
+          "action": {
+            "width": 330
+          },
+          "owner": {
+            "width": 110
+          },
+          "approval": {
+            "width": 120
+          }
+        }
+      },
+      "title": "Prioritised actions (live risk joined from Enterprise Security)",
+      "context": {
+        "confidenceColors": [
+          {
+            "match": "High",
+            "value": "#EB4651"
+          },
+          {
+            "match": "Gap",
+            "value": "#EB4651"
+          },
+          {
+            "match": "Unverified",
+            "value": "#6B6B6B"
+          }
+        ],
+        "confidenceColorsText": [
+          {
+            "match": "High",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "Gap",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "Unverified",
+            "value": "#FFFFFF"
+          }
+        ],
+        "confidenceFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        },
+        "statusColors": [
+          {
+            "match": "Open",
+            "value": "#FF9000"
+          },
+          {
+            "match": "To verify",
+            "value": "#6B6B6B"
+          }
+        ],
+        "statusColorsText": [
+          {
+            "match": "Open",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "To verify",
+            "value": "#FFFFFF"
+          }
+        ],
+        "statusFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    },
+    "viz_6": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "in_this_lab": {
+            "data": "> table | seriesByName(\"in_this_lab\") | formatByType(in_this_labFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"in_this_lab\") | matchValue(in_this_labColors)",
+            "rowColors": "> table | seriesByName(\"in_this_lab\") | matchValue(in_this_labColorsText)",
+            "width": 140
+          },
+          "stage": {
+            "width": 140
+          },
+          "activity": {
+            "width": 230
+          },
+          "prevent": {
+            "width": 320
+          },
+          "detect": {
+            "width": 320
+          },
+          "detections": {
+            "width": 290
+          }
+        }
+      },
+      "title": "Defence by stage: prevent it, detect it, and what this app watches",
+      "context": {
+        "in_this_labColors": [
+          {
+            "match": "detected",
+            "value": "#45991F"
+          },
+          {
+            "match": "GAP: no telemetry",
+            "value": "#EB4651"
+          }
+        ],
+        "in_this_labColorsText": [
+          {
+            "match": "detected",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "GAP: no telemetry",
+            "value": "#FFFFFF"
+          }
+        ],
+        "in_this_labFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_6"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "Actions open",
+      "options": {
+        "query": "| inputlookup itd_response_actions.csv | where status!=\"Done\" | stats count"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "Need human approval",
+      "options": {
+        "query": "| inputlookup itd_response_actions.csv | where approval!=\"No\" | stats count"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Highest live risk",
+      "options": {
+        "query": "| tstats sum(All_Risk.calculated_risk_score) as risk dc(All_Risk.annotations.mitre_attack.mitre_tactic_id) as tactics dc(source) as detections from datamodel=Risk.All_Risk where source=\"AA26-281A - *\" by All_Risk.risk_object | sort - risk | head 1 | eval value='All_Risk.risk_object'.\" (\".risk.\")\" | fields value"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "Visibility gaps to close",
+      "options": {
+        "query": "| inputlookup itd_response_actions.csv | where like(finding,\"Visibility gap%\") | stats count"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "Prioritised actions (live risk joined from Enterprise Security)",
+      "options": {
+        "query": "| inputlookup itd_response_actions.csv\n| join type=left entity [| tstats sum(All_Risk.calculated_risk_score) as risk dc(All_Risk.annotations.mitre_attack.mitre_tactic_id) as tactics dc(source) as detections from datamodel=Risk.All_Risk where source=\"AA26-281A - *\" by All_Risk.risk_object | rename All_Risk.risk_object as entity | fields entity risk]\n| fillnull value=\"-\" risk\n| sort priority\n| table priority finding entity risk evidence confidence action owner approval status"
+      }
+    },
+    "ds_6": {
+      "type": "ds.search",
+      "name": "Defence by stage: prevent it, detect it, and what this app watches",
+      "options": {
+        "query": "| inputlookup itd_controls.csv\n| eval d=split(detections,\"; \")\n| mvexpand d\n| lookup itd_detection_catalog detection AS d OUTPUT lab_rows\n| stats values(activity) as activity values(prevent) as prevent values(detect) as detect values(detections) as detections min(lab_rows) as worst by order stage\n| eval in_this_lab=if(worst>0,\"detected\",\"GAP: no telemetry\")\n| sort order\n| table stage activity prevent detect detections in_this_lab"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 1530
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 360,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 720,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 1080,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 160,
+          "w": 1440,
+          "h": 720
+        }
+      },
+      {
+        "item": "viz_6",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 890,
+          "w": 1440,
+          "h": 620
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

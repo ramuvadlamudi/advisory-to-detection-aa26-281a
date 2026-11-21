@@ -1,0 +1,7 @@
+``` AA26 15 - A1 - CIM Authentication spray: Spraying seen in directory authentication ```
+| tstats dc(Authentication.user) as users
+    count as failures
+    from datamodel=Authentication
+    where Authentication.action=failure
+    by Authentication.src _time span=30m
+| where users>=10 AND failures/users<=3

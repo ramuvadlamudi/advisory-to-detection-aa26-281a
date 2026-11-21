@@ -1,0 +1,30 @@
+# AA26-D07: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D07"
+name: "AA26-281A - Autostart service outside system paths - Rule"
+behaviour: "New auto-start service whose binary sits outside System32 and Program Files"
+description: "A new auto-start service whose binary is outside Windows\\System32 and Program Files."
+mitre_attack:
+  - "T1543.003"
+data_sources: "Windows System log event 7045: Computer, ServiceName, ImagePath, StartType"
+cim: "Change (Endpoint.Services where mapped)"
+prerequisites: "None beyond the data sources"
+search: |
+  `wineventlog_system` EventCode=7045 NOT ImagePath IN ("*\\Windows\\System32\\*","*\\Program Files*")
+  | stats count min(_time) as first_seen by Computer ServiceName ImagePath StartType
+  | eval dest=Computer
+  | eval dest=upper(mvindex(split(dest,"."),0))
+schedule: "20 * * * *"
+search_window: "-70m@m to -10m@m"
+severity: "medium"
+risk: "dest (system) +30"
+false_positives:
+  - "Vendor updaters installed in ProgramData (for example the lab's Lenovo service)"
+tuning:
+  - "Allow-list by host role, service name and exact path, with an owner"
+tests:
+  positive: "'Console Host Service' running C:\\ProgramData\\USOShared\\conhost.exe on WS-0417 fires"
+  negative: "The approved SoftEther client's service (Program Files) stays silent"
+owner: "SOC Detection Engineering (Endpoint)"
+review_date: "2027-02-23"
+response: "Check the binary's original file name and signer; corroborate with process and network evidence."
+lab_backtest_rows: 2

@@ -1,0 +1,14 @@
+``` AA26 27 - Exposure - Vulnerable vs targeted: Vulnerable is not exploited: correlate inventory with telemetry ```
+| inputlookup aa26_lab_vulns.csv
+| join type=left public_ip
+    [| tstats count from datamodel=Network_Traffic
+        where All_Traffic.dest_port IN (21,22,53,80,443,1080)
+        by All_Traffic.src All_Traffic.dest
+     | eventstats dc(All_Traffic.dest) as reach by All_Traffic.src
+     | where reach>=25
+     | stats values(All_Traffic.src) as scanned_by by All_Traffic.dest
+     | rename All_Traffic.dest as public_ip]
+| eval state=case(isnotnull(scanned_by),"Targeted: scanned",
+    internet_facing=="yes","Exposed: internet-facing",
+    true(),"Vulnerable: internal only")
+| table host product cve criticality public_ip scanned_by state

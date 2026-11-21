@@ -1,0 +1,6 @@
+``` AA26 14 - Step 4 - Risk: Step 4: six quiet signals, one loud finding ```
+| tstats sum(All_Risk.calculated_risk_score) as risk
+    dc(All_Risk.annotations.mitre_attack.mitre_tactic_id) as tactics
+    from datamodel=Risk.All_Risk
+    by All_Risk.risk_object All_Risk.risk_object_type
+| where risk>=100 AND tactics>=3

@@ -1,0 +1,15 @@
+``` AA26 23 - SoftEther - Tuned detection: SoftEther: the tuned detection that ships ```
+| tstats count min(_time) as first_seen
+    from datamodel=Endpoint.Processes
+    where (Processes.process_name IN ("conhost.exe","dllhost.exe")
+      NOT Processes.process_path IN ("C:\\Windows\\System32\\*",
+                                     "C:\\Windows\\SysWOW64\\*"))
+      OR Processes.original_file_name IN ("vpnclient*","vpnbridge*")
+    by Processes.dest Processes.process_name
+       Processes.original_file_name Processes.process_path
+| rename Processes.* as *
+| eval dest=upper(mvindex(split(dest,"."),0))
+| lookup aa26_approved_remote_access dest process_path
+    OUTPUT approved_by
+| where isnull(approved_by)
+| convert ctime(first_seen)

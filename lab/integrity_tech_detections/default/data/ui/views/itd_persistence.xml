@@ -1,0 +1,214 @@
+<dashboard version="2" theme="dark">
+  <label>Hunt: SoftEther VPN persistence</label>
+  <description>A legitimate VPN bridge renamed conhost.exe: the process, the service, the DNS and the tunnel it keeps open.</description>
+  <definition><![CDATA[
+{
+  "title": "Hunt: SoftEther VPN persistence",
+  "description": "A legitimate VPN bridge renamed conhost.exe: the process, the service, the DNS and the tunnel it keeps open.",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "Masquerading binary, after tuning (approved installs removed)",
+      "dataSources": {
+        "primary": "ds_1"
+      }
+    },
+    "viz_2": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "Evidence correlated by host: one signal is a question, three is a finding",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.column",
+      "options": {
+        "legendDisplay": "off",
+        "xAxisTitleVisibility": "hide",
+        "seriesColors": [
+          "#EB4651"
+        ]
+      },
+      "title": "Sessions to 203.0.113.88:443 per day: one an hour, every hour, from 29 Sep",
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "ServiceName": {
+            "data": "> table | seriesByName(\"ServiceName\") | formatByType(ServiceNameFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"ServiceName\") | matchValue(ServiceNameColors)",
+            "rowColors": "> table | seriesByName(\"ServiceName\") | matchValue(ServiceNameColorsText)"
+          }
+        }
+      },
+      "title": "New autostart services outside system paths",
+      "context": {
+        "ServiceNameColors": [
+          {
+            "match": "Console Host Service",
+            "value": "#EB4651"
+          }
+        ],
+        "ServiceNameColorsText": [
+          {
+            "match": "Console Host Service",
+            "value": "#FFFFFF"
+          }
+        ],
+        "ServiceNameFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "SoftEther dynamic DNS lookups",
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "Masquerading binary, after tuning (approved installs removed)",
+      "options": {
+        "query": "| tstats count min(_time) as first_seen\n    from datamodel=Endpoint.Processes\n    where (Processes.process_name IN (\"conhost.exe\",\"dllhost.exe\")\n      NOT Processes.process_path IN (\"C:\\\\Windows\\\\System32\\\\*\",\n                                     \"C:\\\\Windows\\\\SysWOW64\\\\*\"))\n      OR Processes.original_file_name IN (\"vpnclient*\",\"vpnbridge*\")\n    by Processes.dest Processes.process_name\n       Processes.original_file_name Processes.process_path\n| rename Processes.* as *\n| eval dest=upper(mvindex(split(dest,\".\"),0))\n| lookup aa26_approved_remote_access dest process_path\n    OUTPUT approved_by\n| where isnull(approved_by)\n| convert ctime(first_seen)\n| fields - approved_by"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "Evidence correlated by host: one signal is a question, three is a finding",
+      "options": {
+        "query": "| tstats count from datamodel=Endpoint.Processes\n    where Processes.original_file_name IN (\"vpnclient*\",\"vpnbridge*\")\n    by Processes.dest\n| eval host=upper(mvindex(split('Processes.dest',\".\"),0)),\n    signal=\"process: SoftEther metadata\"\n| append [search `wineventlog_system` EventCode=7045\n    NOT ImagePath IN (\"*\\\\Windows\\\\System32\\\\*\",\"*\\\\Program Files*\")\n  | eval host=upper(mvindex(split(Computer,\".\"),0)),\n      signal=\"service: autostart outside system paths\"]\n| append [| tstats count from datamodel=Network_Resolution\n    where DNS.query IN (\"*.softether.net\",\"*.vpnazure.net\") by DNS.src\n  | lookup aa26_lab_assets ip AS DNS.src OUTPUT host\n  | eval signal=\"dns: SoftEther dynamic DNS\"]\n| stats dc(signal) as signals values(signal) as evidence by host\n| sort - signals"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Sessions to 203.0.113.88:443 per day: one an hour, every hour, from 29 Sep",
+      "options": {
+        "query": "| tstats count from datamodel=Network_Traffic where All_Traffic.dest=\"203.0.113.88\" by _time span=1d | timechart span=1d sum(count) as sessions"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "New autostart services outside system paths",
+      "options": {
+        "query": "`wineventlog_system` EventCode=7045\n    NOT ImagePath IN (\"*\\\\Windows\\\\System32\\\\*\",\"*\\\\Program Files*\")\n| table _time Computer ServiceName ImagePath StartType\n| eval time=strftime(_time,\"%d %b %H:%M\") | table time Computer ServiceName ImagePath"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "SoftEther dynamic DNS lookups",
+      "options": {
+        "query": "| tstats count from datamodel=Network_Resolution\n    where DNS.query IN (\"*.softether.net\",\"*.vpnazure.net\")\n    by DNS.src DNS.query\n| rename DNS.src as src DNS.query as query"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 710
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 880,
+          "h": 230
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 880,
+          "y": 0,
+          "w": 560,
+          "h": 230
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 240,
+          "w": 1440,
+          "h": 280
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 530,
+          "w": 880,
+          "h": 160
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 880,
+          "y": 530,
+          "w": 560,
+          "h": 160
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

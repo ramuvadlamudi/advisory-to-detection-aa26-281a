@@ -1,0 +1,39 @@
+``` AA26 31 - Exposure - Advisory CVEs in our estate: The advisory's eight CVEs: present, internet-facing, scanned, attempted, visible? ```
+| inputlookup aa26_advisory_cves.csv
+| eval age=tonumber(strftime(now(),"%Y"))-year
+| join type=left cve
+    [| inputlookup aa26_lab_vulns.csv | rename host as asset]
+| join type=left public_ip
+    [| tstats count from datamodel=Network_Traffic
+        where All_Traffic.dest_port IN (21,22,53,80,443,1080)
+        by All_Traffic.src All_Traffic.dest
+     | eventstats dc(All_Traffic.dest) as reach by All_Traffic.src
+     | where reach>=25
+     | lookup aa26_approved_scanners src AS All_Traffic.src OUTPUT reason
+     | where isnull(reason)
+     | stats values(All_Traffic.src) as scanned_by by All_Traffic.dest
+     | rename All_Traffic.dest as public_ip]
+| join type=left cve
+    [search `aa26_iis` (cs_User_Agent="*()*" OR cs_uri_stem IN ("/dana-na/*","/uploads/user","/FileUploader.ashx","/web-apps/apps/api/documents/*") OR cs_uri_query IN ("*memberAccess*","*ognl*","*startsWith*","*%3Cscript*","*%3Csvg*","*%3Cimg*","*onerror*","*onload*"))
+    | eval attempt=case(match(cs_User_Agent,"[(][)][+ ]?[{]"),"CVE-2014-6278 Bash",
+        match(cs_uri_query,"(?i)memberAccess|ognl"),"CVE-2016-3081 Struts",
+        match(cs_uri_stem,"(?i)^/dana-na/.*[.][.]/"),"CVE-2019-11510 Pulse Secure",
+        cs_uri_stem=="/uploads/user" AND cs_method=="POST","CVE-2021-22205 GitLab",
+        match(cs_uri_stem,"(?i)^/FileUploader[.]ashx|^/web-apps/apps/api/documents/"),"CVE-2021-3199 ONLYOFFICE",
+        match(cs_uri_query,"(?i)[[]password[]].{0,4}startsWith"),"CVE-2023-22894 Strapi",
+        match(cs_uri_query,"(?i)%3C(script|svg|img)|onerror%3D|onload%3D"),"XSS payload")
+    | where isnotnull(attempt)
+     | lookup aa26_approved_scanners src AS c_ip OUTPUT reason
+     | where isnull(reason)
+     | eval cve=mvindex(split(attempt," "),0)
+     | stats values(c_ip) as attempted_by by cve]
+| join type=left asset
+    [| tstats count as events where index IN (exchange,web,o365,wineventlog,sysmon,firewall,dns) by host
+     | eval asset=upper(host) | fields asset events]
+| eval telemetry=case(isnull(asset),"-", events>0,"logs to Splunk", true(),"NO LOGS"),
+    priority=case(isnull(asset),"Not found: confirm inventory",
+        internet_facing=="yes" AND isnotnull(scanned_by),"1 Patch now",
+        internet_facing=="yes","2 Patch this week",
+        true(),"3 Patch this month")
+| sort cve
+| table cve year age product impact kev_added_with_advisory asset internet_facing scanned_by attempted_by telemetry priority

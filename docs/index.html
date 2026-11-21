@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From Advisory to Detection: Hunting Integrity Tech (AA26-281A) in Splunk</title>
+<meta name="description" content="A method, a Splunk app and synthetic data for turning a threat advisory into validated detections. Worked example: AA26-281A, Integrity Tech.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="top"><div class="wrap">
+  <a class="brand" href="#">Advisory to Detection</a>
+  <a href="#download">Download</a>
+  <a href="#advisory">The advisory</a>
+  <a href="#old-cves">Old CVEs</a>
+  <a href="#impact">Mission impact</a>
+  <a href="#method">Method</a>
+  <a href="#investigation">Investigation</a>
+  <a href="#defence">Defence by stage</a>
+  <a href="#use">Use the app</a>
+  <a href="#catalogue">Detections</a>
+  <a href="#actions">Five actions</a>
+  <a href="#safety">Safety</a>
+  <a href="#sources">Sources</a>
+</div></nav>
+
+<header class="hero"><div class="wrap">
+  <div class="kicker">ADF Cyber Skills Challenge 2026 · Day 1 · 23 November</div>
+  <h1>From Advisory to Detection: Hunting Integrity Tech (AA26-281A) in Splunk</h1>
+  <p class="question">What if this adversary was already inside your environment? <strong>Could your SOC find them before they take your data?</strong></p>
+  <p class="lead">This page has everything from the session: the context, the method, a Splunk app with 18 detections for this adversary, and 388,653 synthetic events to rehearse on. The goal isn't a nice Splunk demo. It's that you run this method against your next advisory, this week.</p>
+  <div class="buttons" id="download">
+    <a class="btn primary" href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/releases/latest/download/integrity_tech_detections.tgz">Integrity Tech Detections app<small>18 detections · 10 dashboards · 13 lookups (46 KB)</small></a>
+    <a class="btn" href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/releases/latest/download/TA-aa26-281a-lab.tgz">Synthetic lab data add-on<small>388,653 events, the scenario (7.8 MB)</small></a>
+    <a class="btn" href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/releases/latest/download/aa26-281a-starter-kit.zip">Detection engineering starter kit<small>worksheet, catalogue, SPL, readiness calculator</small></a>
+    <a class="btn" href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a">Source on GitHub<small>generator, app source, checksums</small></a>
+  </div>
+  <p class="meta">Lab and synthetic data only: never point it at production. Checksums are in <a href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/releases/latest/download/SHA256SUMS.txt">SHA256SUMS.txt</a>. Presented by Rama Vadlamudi. Community content, not an official or supported Splunk or Cisco product.</p>
+</div></header>
+
+<main>
+
+<section id="five-questions"><div class="wrap">
+  <div class="kicker">Start here</div>
+  <h2>Could you answer all five today, with evidence?</h2>
+  <div class="grid g5">
+    <div class="card"><p>Would you see the reconnaissance?</p></div>
+    <div class="card"><p>Would you detect the compromised identity?</p></div>
+    <div class="card"><p>Would you spot an unauthorised VPN?</p></div>
+    <div class="card"><p>Would you know your mailboxes were being extracted?</p></div>
+    <div class="card"><p>Could you prove which systems were exposed?</p></div>
+  </div>
+  <p class="muted">The session runs in three parts: concern (this adversary is real and patient), discovery (a step-by-step investigation of a simulated intrusion) and confidence (a method you can run against the next advisory).</p>
+</div></section>
+
+<section id="advisory"><div class="wrap">
+  <div class="kicker">The advisory</div>
+  <h2>AA26-281A: Integrity Tech, the outsourced plumbing of espionage</h2>
+  <p class="lead">On 8 October 2026, ASD's ACSC, CISA, the FBI, the NSA and partners published AA26-281A about Chinese government-linked actors enabled by Integrity Technology Group. The same day, the FBI seized seven of its domains. The advisory describes a campaign, not a vulnerability: automated scanning, exploitation of old CVEs, password spraying, a VPN hidden on endpoints, theft of Active Directory credentials and bulk theft of email.</p>
+
+  <div class="grid g3">
+    <div class="card blue"><h4>A contractor, not a crew</h4><p>A for-profit, publicly identified company with Chinese government contracts. According to court filings it built the scanner, rented access, ran the phishing kit and collected the data. Tracked since 2021 as Flax Typhoon, Ethereal Panda and RedJuliett. Outsourcing blurs attribution, and disruption only removes one supplier.</p></div>
+    <div class="card blue"><h4>MicroScan: reconnaissance at industrial scale</h4><p>A Python web app with 1,300+ penetration-testing scripts, in use since 2017 and run from a Mirai-variant botnet. It knocks on FTP, SSH, DNS, HTTP(S) and SOCKS (ports 21, 22, 53, 80, 443, 1080) and hunts decade-old CVEs in common products.</p></div>
+    <div class="card blue"><h4>FishHub: the phishing arm</h4><p>Look-alike domains such as <code>outlook3650.com</code>, <code>youtubecard.com</code> and <code>linkedinns.net</code>. About 20 Taiwanese universities were confirmed victims, the DOJ says. The prize is not the click; it is the identity behind it.</p></div>
+  </div>
+
+  <p>Machines find the door; people walk through it. The first three steps are automated (hijack devices, scan everything, catalogue weak points). The last two are hands-on (get in, then stay and take). The hand-over is where detection gets easier: a scanner is noise, but a person has to sign in, install something and move data.</p>
+
+  <div class="grid g2">
+    <div class="card red">
+      <h4>Attack mechanics (AA26-281A)</h4>
+      <ul>
+        <li><strong>Automation and exploitation:</strong> mass scanning for vulnerable internet-facing services, then exploitation of CVEs from 2014 to 2023, cross-site scripting (XSS) payloads and password spraying.</li>
+        <li><strong>Persistence and exfiltration:</strong> a renamed SoftEther VPN to blend into normal traffic; Active Directory credentials and email taken with native commands.</li>
+      </ul>
+    </div>
+    <div class="card green">
+      <h4>Key mitigations (AA26-281A)</h4>
+      <ul>
+        <li><strong>Surface reduction:</strong> disable unused remote access, ports and file-sharing services.</li>
+        <li><strong>Application hardening:</strong> sanitise input against XSS; patch known CVEs promptly.</li>
+        <li><strong>Identity protection:</strong> strict identity, credential and access management (ICAM) and mandatory multifactor authentication.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Legitimate tool, malicious behaviour</h3>
+  <p>Almost all of the toolkit is dual-use: Nmap, Masscan, Dirsearch, SoftEther. You can't detect this adversary by its tools. You can't block SoftEther, but you can catch a VPN pretending to be <code>conhost.exe</code>.</p>
+
+  <h3>Disrupted twice, still in business</h3>
+  <p>The botnet was taken down in September 2024 (200,000+ devices, per the DOJ), the company was sanctioned by the US Treasury in January 2025, and seven domains were seized on 8 October 2026. Seizing a domain doesn't evict an actor who is already inside: a hidden VPN and stolen credentials don't need <code>c0cc.cc</code>.</p>
+
+  <div class="callout"><strong>Scanned ≠ breached.</strong> The DOJ and the advisory name organisations that were scanned (a US power company, airports in Poland and Japan, Taiwanese gas and power firms and universities, an NGO), not ones proven compromised. State direction is alleged in court filings and assessed by allied agencies; it is not an adjudicated fact, and Beijing denies it. The advisory does not attribute AI use to these actors.</div>
+</div></section>
+
+<section id="old-cves"><div class="wrap">
+  <div class="kicker">The question everyone asks</div>
+  <h2>The CVEs are old. Why does this matter now?</h2>
+  <p class="lead">The eight vulnerabilities the advisory says were successfully exploited date from 2014 to 2023. Shellshock is twelve years old. That is the lesson, not a footnote.</p>
+  <div class="table-wrap"><table>
+    <tr><th>CVE</th><th>Product</th><th>Age in 2026</th><th>Newly added to CISA KEV with this advisory</th></tr>
+    <tr><td class="mono">CVE-2014-6278</td><td>GNU Bash (Shellshock)</td><td>12 years</td><td><span class="chip grey">earlier</span></td></tr>
+    <tr><td class="mono">CVE-2015-3306</td><td>ProFTPD</td><td>11 years</td><td><span class="chip orange">yes</span></td></tr>
+    <tr><td class="mono">CVE-2015-5477</td><td>ISC BIND</td><td>11 years</td><td><span class="chip orange">yes</span></td></tr>
+    <tr><td class="mono">CVE-2016-3081</td><td>Apache Struts 2</td><td>10 years</td><td><span class="chip orange">yes</span></td></tr>
+    <tr><td class="mono">CVE-2019-11510</td><td>Pulse Connect Secure</td><td>7 years</td><td><span class="chip grey">earlier</span></td></tr>
+    <tr><td class="mono">CVE-2021-22205</td><td>GitLab CE</td><td>5 years</td><td><span class="chip grey">earlier</span></td></tr>
+    <tr><td class="mono">CVE-2021-3199</td><td>ONLYOFFICE</td><td>5 years</td><td><span class="chip orange">yes</span></td></tr>
+    <tr><td class="mono">CVE-2023-22894</td><td>Strapi</td><td>3 years</td><td><span class="chip orange">yes</span></td></tr>
+  </table></div>
+  <div class="grid g2">
+    <div class="card"><h4>1. Automation makes old cheap</h4><p>MicroScan carries 1,300+ scripts. Trying every old exploit on every internet-facing host costs the actor nothing, so they keep trying.</p></div>
+    <div class="card"><h4>2. Old systems outlive their patches</h4><p>Edge appliances, FTP and DNS servers drift out of patch cycles, and they are often the boxes that send no logs at all.</p></div>
+    <div class="card"><h4>3. Recent, not history</h4><p>Five of the eight were only added to CISA's Known Exploited Vulnerabilities catalogue with this advisory: exploitation was confirmed recently, not a decade ago.</p></div>
+    <div class="card"><h4>4. Some never reach a web log</h4><p>A ProFTPD or BIND exploit hits the appliance, not IIS. A log search can't find it; only an inventory can.</p></div>
+  </div>
+  <div class="callout blue"><strong>What it teaches:</strong> not "patch faster" in the abstract. Know what you run, know what faces the internet, and know whether it sends logs. If a contractor can inventory your internet-facing services, so can you.</div>
+</div></section>
+
+<section id="impact"><div class="wrap">
+  <div class="kicker">Why it matters to Defence</div>
+  <h2>Mission impact: what this adversary would cost</h2>
+  <div class="grid g3">
+    <div class="card red"><h4>Operational disruption</h4><p>Containment takes edge, identity and mail services offline. Operators lose the systems they plan with, at the worst time.</p></div>
+    <div class="card red"><h4>Intelligence exposure</h4><p>Mail, plans and personnel data read quietly for weeks. The adversary knows what you know, and you don't know what they took.</p></div>
+    <div class="card red"><h4>Persistent access</h4><p>A hidden VPN and valid credentials survive patching and domain seizures. They return when it suits them.</p></div>
+  </div>
+  <div class="table-wrap"><table>
+    <tr><th>Defence challenge</th><th>Why it matters</th><th>In AA26-281A</th></tr>
+    <tr><td>Large attack surface</td><td>Internet-facing and edge infrastructure can be overlooked</td><td>Actors target edge devices that are not closely monitored</td></tr>
+    <tr><td>Legacy infrastructure</td><td>Old vulnerabilities remain exploitable</td><td>The oldest exploited CVE dates from 2014 (Bash)</td></tr>
+    <tr><td>Identity compromise</td><td>Valid credentials make malicious activity look legitimate</td><td>Password spraying across up to ten Exchange interfaces</td></tr>
+    <tr><td>Long-term persistence</td><td>Access can be kept without obvious malware</td><td>A legitimate VPN, renamed, that survives reboots</td></tr>
+    <tr><td>Data exfiltration</td><td>Sensitive information leaves through legitimate services</td><td>Mail leaves through EWS and Microsoft 365 app secrets</td></tr>
+    <tr><td>Disconnected environments</td><td>Intelligence and detections must be operationalised locally</td><td>Indicators, detections and models must ship offline</td></tr>
+  </table></div>
+  <p class="muted">Impacts are the presenter's assessment for a Defence context. Plan for the consequence; don't assume the breach.</p>
+</div></section>
+
+<section id="method"><div class="wrap">
+  <div class="kicker">The method</div>
+  <h2>Intelligence isn't detection: write testable hypotheses</h2>
+  <div class="path"><span>Threat intelligence</span><i>›</i><span>Adversary behaviour</span><i>›</i><span>Detection hypotheses</span><i>›</i><span>Evidence</span><i>›</i><span>Validated detections</span><i>›</i><span>Defensive action</span></div>
+  <p>Take each behaviour from the advisory and write a hypothesis: if they did this here, what would we see, and in which log? Every hypothesis needs the evidence it expects, the telemetry that records it, and a test that proves it fires on a safe simulation and stays quiet on the legitimate look-alike.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Adversary behaviour</th><th>Evidence we expect</th><th>Telemetry</th><th>Validated in the lab</th></tr>
+    <tr><td>Reconnaissance</td><td>One source touches many hosts on the advisory's ports in an hour</td><td>Firewall, NDR, flows</td><td><span class="chip green">Fires; approved scanner silent</span></td></tr>
+    <tr><td>Web enumeration, exploits</td><td>404 bursts; one source trying several advisory exploits</td><td>IIS, WAF, proxy</td><td><span class="chip orange">Fires; edge sends no logs</span></td></tr>
+    <tr><td>Password spraying</td><td>Many accounts fail a few times from one source, then one succeeds</td><td>Exchange IIS, AD, IdP</td><td><span class="chip green">Fires on the sprayed account</span></td></tr>
+    <tr><td>VPN persistence</td><td>Windows-named binary with VPN metadata; autostart service; SoftEther DNS</td><td>Sysmon or EDR, 7045, DNS</td><td><span class="chip green">Fires; approved install silent</span></td></tr>
+    <tr><td>Credential theft (DCSync)</td><td>Directory replication requested by a non-DC account</td><td>4662 + replication SACL</td><td><span class="chip red">Can't validate: no SACL</span></td></tr>
+    <tr><td>Mailbox collection</td><td>EWS volume far above the user's own normal; an unapproved app reading mail</td><td>Exchange IIS, M365 audit</td><td><span class="chip orange">Fires; 30 of 120 audited</span></td></tr>
+    <tr><td>Data exfiltration</td><td>A host uploads far more than it downloads</td><td>Firewall, proxy, EDR</td><td><span class="chip orange">Fires; no proxy logs</span></td></tr>
+  </table></div>
+  <div class="grid g2">
+    <div class="card orange"><h4>Indicators</h4><p>Known IPs, domains and hashes. Fast and precise, but they expire: by the presenter's count, 97% of the advisory's dated indicators were last seen before 2025.</p></div>
+    <div class="card blue"><h4>Behaviour</h4><p>What the attacker has to do: scan, spray, persist, collect. It survives a change of infrastructure. Use both; depend on neither alone. An indicator match is a lead to enrich, not proof.</p></div>
+  </div>
+</div></section>
+
+<section id="investigation"><div class="wrap">
+  <div class="kicker">The investigation · lab screenshots, synthetic data</div>
+  <h2>8 October, 09:00. The advisory lands. Brief the commander by 16:00.</h2>
+  <p class="lead">This is the guided walkthrough from the session, in eight steps. Every screen is from the Integrity Tech Detections app running on the synthetic data you can download above, so you can reproduce each one.</p>
+
+  <div class="step">
+    <img src="img/itd_overview.png" alt="Overview dashboard: 16 of 17 detections fired, 2 entities over the risk threshold, 43% readiness" loading="lazy">
+    <div>
+      <div class="label">Step 1 of 8 · Overview</div>
+      <h3>What does our environment already know?</h3>
+      <ol>
+        <li><strong>16 of 17 detections fired</strong> on the simulated intrusion. The silent one is DCSync: a telemetry gap, not a pass.</li>
+        <li><strong>2 entities over the threshold:</strong> j.citizen and a.lim. Who are they?</li>
+        <li><strong>43% ready:</strong> 3 of 7 behaviours validated. Would you be comfortable telling your commander that?</li>
+      </ol>
+      <p class="take">Every number is a question.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <img src="img/itd_exposure.png" alt="Exposure dashboard: the advisory's CVEs joined to the vulnerability inventory, scanning sources, exploit attempts and log coverage" loading="lazy">
+    <div>
+      <div class="label">Step 2 of 8 · Exposure</div>
+      <h3>Are we exposed to the advisory's CVEs, and would we even see an attack on them?</h3>
+      <ol>
+        <li><strong>5 of the 8 CVEs are on our assets.</strong> VPN01 and FTP01 face the internet and were scanned by the actor: patch now.</li>
+        <li><strong>NO LOGS:</strong> every vulnerable appliance sends nothing to Splunk. That's unknown, not safe.</li>
+        <li><strong>One source tried 7 techniques</strong> against WEB01 in two minutes: six advisory CVEs plus XSS. Two XSS requests were answered.</li>
+      </ol>
+      <p class="take">Vulnerable, exposed, targeted, exploited: four different states. Report which.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <img src="img/itd_recon.png" alt="Reconnaissance hunt: scanner verdicts, exploit attempts, the password spray and the successful sign-in" loading="lazy">
+    <div>
+      <div class="label">Step 3 of 8 · Reconnaissance to sign-in</div>
+      <h3>Who scanned us, what did they try, and did anyone get in?</h3>
+      <ol>
+        <li><strong>Scanned, then signed in:</strong> 203.0.113.47 touched 41 hosts on the advisory's ports. Our approved scanner is labelled from a register, not silently excluded.</li>
+        <li><strong>Then tried the exploits</strong> and sprayed 64 mailboxes across four Exchange interfaces.</li>
+        <li><strong>The sign-in that worked:</strong> the IIS log and the Windows 4624 event agree, j.citizen at 11:58:07 from the spray source.</li>
+      </ol>
+      <p class="take">Don't stop at the count. Open the event that proves it.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <img src="img/itd_persistence.png" alt="Persistence hunt: conhost.exe whose original file name is vpnbridge.exe, an autostart service and hourly SoftEther tunnel" loading="lazy">
+    <div>
+      <div class="label">Step 4 of 8 · Persistence</div>
+      <h3>Is this a stolen password, or are they still inside?</h3>
+      <ol>
+        <li><strong>conhost.exe is vpnbridge.exe</strong>, running from ProgramData. The approved SoftEther install is tuned out by host and path, never by process name.</li>
+        <li><strong>Three signals, one host:</strong> process metadata, an autostart service, SoftEther dynamic DNS.</li>
+        <li><strong>Always on:</strong> one session an hour to 203.0.113.88:443.</li>
+      </ol>
+      <p class="take">The original file name doesn't change when the attacker renames the file.</p>
+    </div>
+  </div>
+
+  <h3>Step 5 of 8 · Your call: what would you do next?</h3>
+  <p>WS-0417, right now: <code>conhost.exe</code> runs from ProgramData; its original file name is <code>vpnbridge.exe</code>; it resolves SoftEther dynamic DNS and holds an hourly tunnel; its owner signed in from the scanner's address.</p>
+  <div class="options">
+    <div><b>A</b>Block the IP address</div>
+    <div><b>B</b>Ignore it: SoftEther is legitimate software</div>
+    <div><b>C</b>Correlate the evidence, then investigate</div>
+    <div><b>D</b>Isolate the host without approval</div>
+  </div>
+  <details>
+    <summary>Reveal the answer</summary>
+    <p><strong>C: correlate, then act, with approval.</strong></p>
+    <ul>
+      <li><strong>Not A:</strong> tomorrow it's a new address, and you've lost sight of the tunnel you could have watched.</li>
+      <li><strong>Not B:</strong> legitimate software, illegitimate use. A Windows name on a VPN binary is the tell.</li>
+      <li><strong>Not D, yet:</strong> blind isolation loses the scope, destroys volatile evidence and tips off the operator.</li>
+    </ul>
+    <p>Correlating took two minutes: three of three SoftEther signals on the host; the owner sprayed and signed in from 203.0.113.47; a tunnel every hour since 29 September; and a scope that reaches her mailbox. Then a person decides: collect memory and disk, get approval, isolate through the incident response process, block the DDNS name and IP, hunt the hash fleet-wide.</p>
+  </details>
+
+  <div class="step">
+    <img src="img/itd_collection.png" alt="Collection hunt: EWS volume against each user's normal, a new app secret and an app reading seven mailboxes" loading="lazy">
+    <div>
+      <div class="label">Step 6 of 8 · Collection</div>
+      <h3>What did they take, and how do we know?</h3>
+      <ol>
+        <li><strong>2,400 EWS calls in one hour</strong> as j.citizen from a new address, with no user agent. Her normal is 3.</li>
+        <li><strong>A secret added to her app</strong> on 30 Sep at 22:10:37, from that same address.</li>
+        <li><strong>Then the app reads seven mailboxes</strong>, one by one, as the app itself.</li>
+      </ol>
+      <p class="take">Show the audit event, not just the count: who, what, when, from where.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <img src="img/itd_storyline.png" alt="Incident storyline: every detection linked to one identity, in time order" loading="lazy">
+    <div>
+      <div class="label">Step 7 of 8 · Storyline</div>
+      <h3>Six separate incidents, or one coordinated intrusion?</h3>
+      <ol>
+        <li><strong>First signal: 28 Sep, 09:12</strong>, 9 days 22 hours before the advisory landed.</li>
+        <li><strong>Seven detections, one chain:</strong> scan, exploit, spray, sign-in, VPN, secret, mail. Each is quiet on its own.</li>
+        <li><strong>One thing we can't see:</strong> DCSync. No 4662 telemetry, so the chain has a hole.</li>
+      </ol>
+      <p>Enterprise Security raises one finding per entity: j.citizen at risk 200 across six tactics, and a.lim (the FishHub victim) at 100.</p>
+      <img src="img/es_findings.png" alt="Enterprise Security analyst queue with two findings" loading="lazy" style="margin-top:8px">
+      <p class="take">One intrusion, one finding, one analyst: not six tickets for six people.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <img src="img/itd_response.png" alt="Defender action centre: ranked actions with owner, approval, evidence and live risk, plus controls by stage" loading="lazy">
+    <div>
+      <div class="label">Step 8 of 8 · Defender action centre</div>
+      <h3>What do we do, who owns it, and who must approve?</h3>
+      <ol>
+        <li><strong>Six of eight actions need approval:</strong> account, isolation and notification. Detection proposes; people decide.</li>
+        <li><strong>Two are visibility gaps:</strong> DCSync auditing; edge, Linux and mailbox logging. They get owners and dates.</li>
+        <li><strong>Every action carries evidence</strong>, confidence, owner and status, with live risk joined from ES.</li>
+      </ol>
+      <p class="take">A finding isn't finished until it has an owner, an action and an approval.</p>
+    </div>
+  </div>
+
+  <div class="callout blue"><strong>What the scenario includes that most demos don't:</strong> the approved scanner, an approved SoftEther client on another workstation, an integration account making 160 EWS calls an hour, an approved backup app that reads every mailbox nightly, and a legitimate <code>Css.js</code> on the web server. A detection that only fires on the attack and stays quiet on these has been tested; one that hasn't seen them hasn't.</div>
+</div></section>
+
+<section id="defence"><div class="wrap">
+  <div class="kicker">Prevent it, detect it, prove it</div>
+  <h2>Defence by stage</h2>
+  <p>Detection is one column, not the answer. Across the top are the advisory's mitigations; the last column is the honest part: whether we've proven, in the lab, that we would see it.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Stage</th><th>Adversary activity</th><th>Prevent: controls</th><th>What Splunk monitors</th><th>In this lab</th></tr>
+    <tr><td>Reconnaissance</td><td>Mass scanning of FTP, SSH, DNS, HTTP(S) and SOCKS</td><td>Attack surface management; close unused ports and services</td><td>Scan patterns by source: direction, baseline, what happened next</td><td><span class="chip green">Detected</span></td></tr>
+    <tr><td>Exploitation</td><td>Old CVEs (2014–2023) and XSS payloads</td><td>Patch the advisory CVEs; retire end-of-life; sanitise input; WAF</td><td>Exploit attempts in web logs; vulnerable versus targeted assets</td><td><span class="chip orange">Web only</span></td></tr>
+    <tr><td>Phishing</td><td>FishHub look-alike domains and script stagers</td><td>Email security; domain protection; user reporting</td><td>Office starting script hosts; seized domains; follow-on connections</td><td><span class="chip green">Detected</span></td></tr>
+    <tr><td>Password spraying</td><td>EBurst across up to ten Exchange interfaces</td><td>ICAM; phishing-resistant MFA on every protocol; no legacy auth</td><td>Many accounts, few tries; a success from the spraying source</td><td><span class="chip green">Detected</span></td></tr>
+    <tr><td>VPN persistence</td><td>Renamed SoftEther, autostart service, dynamic DNS</td><td>Application control; EDR; approved remote-access register</td><td>Original file name; services outside system paths; DDNS; hourly tunnels</td><td><span class="chip orange">Windows only</span></td></tr>
+    <tr><td>Credential theft</td><td>DCSync and Active Directory credential harvesting</td><td>Restrict replication rights; tiered administration; PAM</td><td>4662 replication requests by a non-DC account</td><td><span class="chip red">Gap</span></td></tr>
+    <tr><td>Mailbox collection</td><td>EWS scripts; an app granted Mail.Read</td><td>Least privilege; app consent governance; audit every mailbox</td><td>EWS volume against each user's normal; new secrets; unapproved apps</td><td><span class="chip orange">Partial</span></td></tr>
+    <tr><td>Exfiltration</td><td>Uploads through the tunnel; FishHub servers</td><td>Egress filtering; data protection; proxy</td><td>Upload-heavy hosts; known-bad destinations</td><td><span class="chip orange">Partial</span></td></tr>
+  </table></div>
+
+  <h3>Detection readiness: what we can prove we would see</h3>
+  <div class="grid g2">
+    <div class="card"><div class="num">3 ÷ 7 = 43%</div><p>Detection readiness = validated hypotheses ÷ total relevant hypotheses × 100. Partial counts as zero, so it's conservative; weighted for impact with partial credit it's 55% (the starter kit has the calculator). It's a proposed operational metric, not a MITRE, ASD or Splunk standard. State the denominator every time you quote it.</p></div>
+    <div class="card orange"><h4>The number isn't the message</h4><p>The message is: we can't see the behaviour that would hand them the whole domain (DCSync), and one audit setting fixes that this week. Measure the outcome, not the activity: technique coverage, telemetry coverage, detection effectiveness, false positives, latency, investigation readiness.</p></div>
+  </div>
+  <div class="step">
+    <img src="img/itd_readiness.png" alt="Readiness dashboard: status, evidence and owner for each behaviour" loading="lazy">
+    <div><div class="label">Readiness dashboard</div><p>Each behaviour with its status, the telemetry behind it, the reason, and an owner. Swap in your own register and this becomes your own score and your own gap list.</p></div>
+  </div>
+</div></section>
+
+<section id="use"><div class="wrap">
+  <div class="kicker">Take it home</div>
+  <h2>What you can do with the app, and how to use it</h2>
+  <p class="lead">The app is a worked example of the method, not a product. Use it three ways.</p>
+  <div class="grid g3">
+    <div class="card blue"><h4>Day 1 · in a lab, never production</h4><ul>
+      <li>Install the data add-on (388,653 synthetic events) and the Integrity Tech Detections app.</li>
+      <li>Walk the storyline: the screens on this page.</li>
+      <li>Backtest: 16 of 17 behaviours fire; DCSync is the gap.</li>
+      <li>Use it to train analysts on a real adversary's tradecraft without touching real systems.</li>
+    </ul></div>
+    <div class="card orange"><h4>Week 1 · in your environment</h4><ul>
+      <li>Point the app's macros (<code>aa26_iis</code>, <code>aa26_o365</code> and others) at your own indexes.</li>
+      <li>Swap in your assets, identities, vulnerabilities, approved scanners and approved remote-access tools.</li>
+      <li>Open readiness: your score, your gaps, your owners.</li>
+      <li>Enable detections one at a time; tune with registers, never by weakening the logic.</li>
+    </ul></div>
+    <div class="card green"><h4>Every advisory · after that</h4><ul>
+      <li>Behaviour, hypothesis, telemetry, detection, test.</li>
+      <li>Add a row to the catalogue and the readiness register.</li>
+      <li>Brief the gaps with owners and dates.</li>
+      <li>Retest every quarter: data sources drift.</li>
+    </ul></div>
+  </div>
+
+  <h3>What's in the box</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Package</th><th>What it contains</th></tr>
+    <tr><td><strong>Integrity Tech Detections</strong> (<code>integrity_tech_detections.tgz</code>)</td><td>18 Enterprise Security detections (17 behaviours and one correlation finding), each with risk scoring, ATT&amp;CK mapping, tuning registers and a response note. 10 dashboards: overview, incident storyline, four hunts (exposure, reconnaissance, persistence, collection), investigate, the Defender action centre, readiness and the detection library. 13 lookups: AA26-281A domains and IPs from CISA's STIX file and the DOJ seizure, the advisory CVEs, approved scanners, remote-access tools and mail apps, assets, identities, vulnerabilities, the detection catalogue, readiness register, response actions and controls.</td></tr>
+    <tr><td><strong>Synthetic lab data</strong> (<code>TA-aa26-281a-lab.tgz</code>)</td><td>388,653 events over 14 September to 8 October 2026 (Sydney time): firewall, DNS, IIS (web and Exchange), Windows Security and System, Sysmon and Microsoft 365 audit. Fictional hosts and users (<code>lab.example</code>) and documentation IP ranges. 31 saved reports ("AA26 01" to "AA26 31") with expected results.</td></tr>
+    <tr><td><strong>Starter kit</strong> (<code>aa26-281a-starter-kit.zip</code>)</td><td>Threat-to-detection playbook, hypothesis worksheet, detection catalogue (CSV and Markdown), data requirements, validation test plan, tuning guide, deployment checklist, analyst investigation playbook, readiness calculator, AI prompts, an exercise, a YAML definition for every detection (search, ATT&amp;CK, tests, tuning, response), and 31 SPL files. Vendor-independent: the method works with any SIEM.</td></tr>
+  </table></div>
+
+  <h3>Quick start (lab)</h3>
+  <ol>
+    <li>Use a lab Splunk Enterprise instance with Enterprise Security 8.x, Splunk_SA_CIM, the Splunk Add-on for Microsoft Windows, the Splunk Add-on for Microsoft Office 365 and ES Content Update. The Sysmon add-on is optional.</li>
+    <li>In Splunk Web: <strong>Apps › Manage Apps › Install app from file</strong>. Upload <code>TA-aa26-281a-lab.tgz</code> and restart. It creates the lab indexes and indexes its bundled data (allow a few minutes).</li>
+    <li>Install <code>integrity_tech_detections.tgz</code> the same way.</li>
+    <li>Set your user time zone to Australia/Sydney so times match this page.</li>
+    <li>Seed the risk events and raise the two findings: follow <a href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/blob/main/lab/DEMO_SEARCHES.md">DEMO_SEARCHES.md</a>, or run the helper (environment variables only, no stored credentials):
+<pre><code>cd lab
+export SPLUNK_MGMT=https://&lt;your-lab-host&gt;:8089 SPLUNK_USERNAME=&lt;user&gt;
+python3 labctl.py load      # checks event counts, adds lab indexes to the role
+python3 labctl.py seed      # writes the scenario's risk events once
+python3 labctl.py validate  # 31 saved reports return their expected results
+python3 labctl.py backtest  # 18 detections over the scenario window
+python3 labctl.py findings  # raises the two ES findings</code></pre></li>
+    <li>Open <strong>Integrity Tech Detections › Overview</strong> and follow the eight steps above.</li>
+  </ol>
+  <p class="muted">Want different dates? <code>python3 generate_lab_data.py --day0 YYYY-MM-DD --hunt YYYY-MM-DDTHH:MM</code> rebuilds the data, saved reports and package. Splunk Cloud won't accept an app that monitors bundled files; send the files through a forwarder or HEC using <code>output/manifest.json</code>. Full detail: <a href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/blob/main/lab/README.md">lab/README.md</a>.</p>
+
+  <h3>What it needs from your environment (week 1)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Data</th><th>Used for</th></tr>
+    <tr><td>Firewall, DNS and web, CIM-mapped</td><td>Scanning, exploit attempts, enumeration, dynamic DNS, tunnels, uploads, known-bad destinations</td></tr>
+    <tr><td>Exchange IIS logs and Microsoft 365 unified audit (MailItemsAccessed on every mailbox)</td><td>Spraying, spray success, EWS volume, app secrets and consent, app mailbox reads</td></tr>
+    <tr><td>Sysmon or EDR process, file and DNS events</td><td>SoftEther masquerading, decoy file names, FishHub-style stagers</td></tr>
+    <tr><td>Windows Security 4624, 4625, 4662 (with the replication SACL) and System 7045</td><td>Sign-ins, autostart services, DCSync</td></tr>
+    <tr><td>Enterprise Security (optional)</td><td>Risk scoring and findings. Every hunt and dashboard search is plain SPL.</td></tr>
+  </table></div>
+
+  <div class="callout blue"><strong>Disconnected and classified networks.</strong> Everything ships as files: two app packages, CSV lookups and the synthetic data. Nothing calls out at run time. Bring updates across through your normal import process, test on a lab copy with the synthetic data, then promote like any other change. If you use AI to help draft detections there, it has to be a locally hosted model, and its output goes through the same tests.</div>
+</div></section>
+
+<section id="catalogue"><div class="wrap">
+  <div class="kicker">The detection catalogue</div>
+  <h2>18 detections, each with a test</h2>
+  <p>Each detection is backtested over the scenario window. "Lab rows" is how many results it returns on the synthetic data; zero for DCSync is the visibility gap, not a pass. Positive and negative tests, false positives, tuning and response for each are in the <a href="https://github.com/ramuvadlamudi/advisory-to-detection-aa26-281a/blob/main/starter-kit/02-detection-catalogue.md">catalogue</a>.</p>
+  <div class="table-wrap"><table>
+  <tr><th>ID</th><th>Detection</th><th>Behaviour</th><th>ATT&amp;CK</th><th>Severity</th><th>Lab rows</th></tr>
+  <tr><td class="mono">AA26-D01</td><td>Exchange password spray</td><td>EBurst-style password spraying across Exchange interfaces</td><td class="mono">T1110.003</td><td><span class="chip grey">low</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D02</td><td>Spray source authenticated</td><td>A sprayed account then authenticates from the spraying source</td><td class="mono">T1078 T1110.003</td><td><span class="chip red">high</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D03</td><td>Scanning on advisory ports</td><td>Reconnaissance against the advisory&#x27;s ports (21, 22, 53, 80, 443, 1080)</td><td class="mono">T1595.002</td><td><span class="chip grey">low</span></td><td>3</td></tr>
+  <tr><td class="mono">AA26-D04</td><td>Web enumeration burst</td><td>dirsearch-style enumeration of .php and .asp pages</td><td class="mono">T1595.003</td><td><span class="chip grey">low</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D17</td><td>Exploit attempts for advisory CVEs</td><td>One source trying several of the advisory&#x27;s exploited CVEs (2014-2023) and XSS payloads against web servers</td><td class="mono">T1190 T1059.007</td><td><span class="chip orange">medium</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D05</td><td>SoftEther masquerading as Windows binary</td><td>SoftEther VPN renamed as a Windows process for persistence (the flagship walkthrough)</td><td class="mono">T1036.005 T1133 T1572</td><td><span class="chip red">high</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D06</td><td>SoftEther dynamic DNS</td><td>SoftEther reaching its server through dynamic DNS or VPN Azure</td><td class="mono">T1572 T1568</td><td><span class="chip orange">medium</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D07</td><td>Autostart service outside system paths</td><td>New auto-start service whose binary sits outside System32 and Program Files</td><td class="mono">T1543.003</td><td><span class="chip orange">medium</span></td><td>2</td></tr>
+  <tr><td class="mono">AA26-D08</td><td>EWS volume far above normal</td><td>Scripted mailbox collection through Exchange Web Services (Curlc4.txt)</td><td class="mono">T1114.002</td><td><span class="chip red">high</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D09</td><td>Unapproved app reading many mailboxes</td><td>office-cli style collection through a Microsoft 365 app registration</td><td class="mono">T1114.002 T1550.001</td><td><span class="chip red">high</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D10</td><td>New app secret or consent</td><td>Credentials added to an application, or consent granted</td><td class="mono">T1098.001</td><td><span class="chip orange">medium</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D11</td><td>DCSync by non-machine account</td><td>DCSync with DC.exe or secretsdump (directory replication by a non-DC account)</td><td class="mono">T1003.006</td><td><span class="chip red">critical</span></td><td><span class="chip red">0: gap</span></td></tr>
+  <tr><td class="mono">AA26-D12</td><td>Advisory decoy file names</td><td>Mail dumps and tools staged under the advisory&#x27;s decoy names</td><td class="mono">T1036.008 T1074.001</td><td><span class="chip orange">medium</span></td><td>3</td></tr>
+  <tr><td class="mono">AA26-D13</td><td>FishHub-style script stager</td><td>FishHub phishing stager: a .vbe saved to %temp% and run by a script host</td><td class="mono">T1566.001 T1059.005 T1105</td><td><span class="chip red">high</span></td><td>2</td></tr>
+  <tr><td class="mono">AA26-D14</td><td>Known-bad domain resolved</td><td>Resolution of an advisory or seizure domain (indicator matching)</td><td class="mono">T1071.001 T1105</td><td><span class="chip orange">medium</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D15</td><td>Connection to known-bad IP</td><td>Traffic to an advisory or seizure IP address (indicator matching)</td><td class="mono">T1071.001 T1041</td><td><span class="chip orange">medium</span></td><td>1</td></tr>
+  <tr><td class="mono">AA26-D16</td><td>Upload-heavy host</td><td>Bulk upload from a host that normally downloads</td><td class="mono">T1048 T1041</td><td><span class="chip grey">low</span></td><td>6</td></tr>
+  <tr><td class="mono">AA26-C01</td><td>Integrity Tech behaviour chain</td><td>Several AA26-281A behaviours on one identity or one host</td><td class="mono">TA0001-TA0011 (any three tactics)</td><td><span class="chip red">high</span></td><td>2</td></tr>
+  </table></div>
+</div></section>
+
+<section id="ai"><div class="wrap">
+  <div class="kicker">AI-assisted detection engineering</div>
+  <h2>Draft, then prove</h2>
+  <p>AI changes the speed and scale on both sides, but AI-generated SPL is not a validated detection. In the lab, a typical first draft assumed <code>src_ip</code> and <code>action=failure</code>: zero rows. Zero can mean "no attack" or "wrong fields". The analyst checked the schema (the IIS client field is <code>c_ip</code>; a failed logon is <code>sc_status=401</code>) and the corrected search found all 64 sprayed users.</p>
+  <div class="grid g3">
+    <div class="card"><h4>1 · Advisory analysis</h4><p>Extract behaviours, ATT&amp;CK techniques, hypotheses, telemetry and blind spots. Check: every claim quotes the advisory.</p></div>
+    <div class="card"><h4>2 · Detection engineering</h4><p>Draft SPL from the schema you actually have. Check: does it run, does it detect, and what legitimate activity triggers it?</p></div>
+    <div class="card"><h4>3 · Explainable investigation</h4><p>Why the entity was flagged, which events, what's missing, what next. Check: the analyst can challenge every point.</p></div>
+  </div>
+  <p class="muted">Prompts are in the starter kit (<code>09-ai-prompts.md</code>). AI assists; people approve.</p>
+</div></section>
+
+<section id="actions"><div class="wrap">
+  <div class="kicker">This week</div>
+  <h2>Five actions for your next advisory</h2>
+  <div class="five">
+    <div><h4>Take one advisory</h4><p>A recent one that names technology you run. AA26-281A will do.</p></div>
+    <div><h4>Extract one behaviour</h4><p>Quote the sentence. A behaviour, not an indicator.</p></div>
+    <div><h4>Identify the telemetry</h4><p>Which log, which fields, how far back? Prove it with a search.</p></div>
+    <div><h4>Build and test one detection</h4><p>It fires on a safe simulation and stays quiet on the legitimate look-alike.</p></div>
+    <div><h4>Record the gap, owner and plan</h4><p>If you can't build it, the gap is the deliverable.</p></div>
+  </div>
+  <div class="template">One sentence per hypothesis: a <em>[thing]</em> that shows <em>[evidence]</em> in <em>[context]</em> may indicate <em>[behaviour]</em>.</div>
+  <h3>Report exposure in five states, not two</h3>
+  <div class="table-wrap"><table>
+    <tr><th>State</th><th>Example from the lab</th></tr>
+    <tr><td><span class="chip grey">Vulnerable</span></td><td>GIT01, LEGACY01: known CVEs, internal only</td></tr>
+    <tr><td><span class="chip orange">Suspicious activity</span></td><td>VPN01, FTP01: scanned by the actor</td></tr>
+    <tr><td><span class="chip red">Confirmed malicious</span></td><td>WS-0417: a disguised VPN, three signals</td></tr>
+    <tr><td><span class="chip red">Confirmed compromise</span></td><td>j.citizen's mailbox, read from outside</td></tr>
+    <tr><td><span class="chip grey">Unknown</span></td><td>Edge appliances, Linux, DCSync: no telemetry</td></tr>
+  </table></div>
+  <p class="muted">A vulnerable server is not proof of compromise. An indicator match is not proof of intrusion. Finding nothing is not proof you are safe.</p>
+
+  <div class="callout"><strong>The 48-hour challenge.</strong> Within 48 hours of returning to your organisation, take one recent threat advisory and operationalise at least one detection hypothesis using this method. Not every advisory can be done in 48 hours. The goal is to start, and to make the gaps visible. Use the hypothesis worksheet (<code>01-hypothesis-worksheet.md</code>) and the exercise (<code>10-exercise.md</code>) in the starter kit.</div>
+</div></section>
+
+<section id="safety"><div class="wrap">
+  <div class="kicker">Safety and limits</div>
+  <h2>Read this before you install anything</h2>
+  <ul>
+    <li><strong>Lab only.</strong> The data add-on creates indexes and adds them to a role's default search; the detection app installs 18 scheduled detections. Never install either on production.</li>
+    <li><strong>Synthetic data.</strong> Hosts, users and internal addresses are fictional; external actors use documentation ranges (192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24). The two answered XSS requests and every other result are part of the scenario, not a real environment.</li>
+    <li><strong>Real indicators, no traffic.</strong> The indicator lookups hold the real AA26-281A domains and IPs from CISA's STIX file and the DOJ seizure. Two of them appear in the synthetic FishHub events so the sweeps have something to find. Nothing in this repository sends traffic to them.</li>
+    <li><strong>No exploitation.</strong> Nothing here exploits a system. The exploit attempts are log lines, written by a generator.</li>
+    <li><strong>No credentials.</strong> Scripts read the Splunk address and credentials from environment variables or a prompt. Nothing is stored.</li>
+    <li><strong>Lab numbers are lab numbers.</strong> The 43% readiness, the risk scores and the backtest counts were measured on synthetic data, not a Defence environment.</li>
+  </ul>
+</div></section>
+
+<section id="sources"><div class="wrap">
+  <div class="kicker">Sources</div>
+  <h2>Read the primary material</h2>
+  <ul>
+    <li><a href="https://www.cisa.gov/news-events/cybersecurity-advisories/aa26-281a">AA26-281A</a>: the joint advisory (ASD's ACSC, CISA, FBI, NSA and partners), 8 October 2026, including Appendix B (exploited CVEs) and the STIX indicators.</li>
+    <li>US Department of Justice and FBI: seizure of seven Integrity Tech domains, 8 October 2026 (W.D. Pa.).</li>
+    <li>FBI, NSA and US Cyber Command CNMF: botnet disruption advisory, 18 September 2024.</li>
+    <li>US Treasury OFAC: sanctions on Integrity Technology Group, 3 January 2025.</li>
+    <li><a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog">CISA Known Exploited Vulnerabilities catalogue</a>.</li>
+    <li><a href="https://research.splunk.com/stories/flax_typhoon/">Splunk Security Content: Flax Typhoon analytic story</a>.</li>
+    <li><a href="https://attack.mitre.org/">MITRE ATT&amp;CK</a>.</li>
+  </ul>
+</div></section>
+
+<section class="closing"><div class="wrap">
+  <p>Intelligence is not protection.</p>
+  <p>Visibility is not detection.</p>
+  <p>Detection is not defence until it is validated.</p>
+  <p class="small">The next threat advisory is not a question of if. It is whether your SOC is ready to act on it.</p>
+</div></section>
+
+</main>
+
+<footer><div class="wrap">
+  <p>From Advisory to Detection: Hunting Integrity Tech (AA26-281A) in Splunk. Presented by Rama Vadlamudi at the ADF Cyber Skills Challenge, 23 November 2026.</p>
+  <p>Community content, provided as is for training and lab use. Not an official or supported Splunk or Cisco product. Splunk is a trademark of Splunk LLC. Screenshots show the app on synthetic data.</p>
+</div></footer>
+
+</body>
+</html>

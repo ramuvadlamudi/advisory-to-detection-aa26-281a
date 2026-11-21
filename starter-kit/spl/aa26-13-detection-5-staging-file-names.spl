@@ -1,0 +1,7 @@
+``` AA26 13 - Detection 5 - Staging file names: Detection 5: the advisory's decoy file names ```
+| tstats count from datamodel=Endpoint.Filesystem
+    where Filesystem.file_name IN ("001.gif","Css.js",
+      "M2k*.js","Include.png","All_scanner_v*.pl.gz",
+      ".sess.zip")
+    by Filesystem.dest Filesystem.file_path
+       Filesystem.file_name

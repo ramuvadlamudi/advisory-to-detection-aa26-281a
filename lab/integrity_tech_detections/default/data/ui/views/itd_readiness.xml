@@ -1,0 +1,264 @@
+<dashboard version="2" theme="dark">
+  <label>Telemetry and detection readiness</label>
+  <description>What we can prove we would see. Readiness = validated behaviours ÷ relevant behaviours (a proposed metric).</description>
+  <definition><![CDATA[
+{
+  "title": "Telemetry and detection readiness",
+  "description": "What we can prove we would see. Readiness = validated behaviours \u00f7 relevant behaviours (a proposed metric).",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#FF9000",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "Detection readiness",
+      "dataSources": {
+        "primary": "ds_1"
+      }
+    },
+    "viz_2": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#45991F",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "telemetry and a tested detection"
+      },
+      "title": "Available",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#FF9000",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "some evidence, incomplete coverage"
+      },
+      "title": "Partial",
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#EB4651",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "zero is not safe: the audit SACL was never set"
+      },
+      "title": "Directory replication events (4662)",
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "status": {
+            "data": "> table | seriesByName(\"status\") | formatByType(statusFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"status\") | matchValue(statusColors)",
+            "rowColors": "> table | seriesByName(\"status\") | matchValue(statusColorsText)"
+          }
+        }
+      },
+      "title": "Readiness by behaviour",
+      "context": {
+        "statusColors": [
+          {
+            "match": "Available",
+            "value": "#45991F"
+          },
+          {
+            "match": "Partial",
+            "value": "#FF9000"
+          },
+          {
+            "match": "Missing",
+            "value": "#EB4651"
+          }
+        ],
+        "statusColorsText": [
+          {
+            "match": "Available",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "Partial",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "Missing",
+            "value": "#FFFFFF"
+          }
+        ],
+        "statusFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    },
+    "viz_6": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "What data do we have, and how far back?",
+      "dataSources": {
+        "primary": "ds_6"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "Detection readiness",
+      "options": {
+        "query": "| inputlookup itd_readiness.csv | stats count(eval(status=\"Available\")) as ok count as total | eval value=ok.\" of \".total.\" = \".round(100*ok/total).\"%\" | fields value"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "Available",
+      "options": {
+        "query": "| inputlookup itd_readiness.csv | where status=\"Available\" | stats count"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Partial",
+      "options": {
+        "query": "| inputlookup itd_readiness.csv | where status=\"Partial\" | stats count"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "Directory replication events (4662)",
+      "options": {
+        "query": "`wineventlog_security` EventCode=4662 | stats count"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "Readiness by behaviour",
+      "options": {
+        "query": "| inputlookup itd_readiness.csv | table behaviour status evidence detections"
+      }
+    },
+    "ds_6": {
+      "type": "ds.search",
+      "name": "What data do we have, and how far back?",
+      "options": {
+        "query": "| tstats count min(_time) as first max(_time) as last where index IN (exchange, web, o365, wineventlog, sysmon, firewall, dns) by index sourcetype | eval days=round((last-first)/86400) | sort - count | table index sourcetype count days"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 650
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 360,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 720,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 1080,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 160,
+          "w": 860,
+          "h": 470
+        }
+      },
+      {
+        "item": "viz_6",
+        "type": "block",
+        "position": {
+          "x": 860,
+          "y": 160,
+          "w": 580,
+          "h": 470
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

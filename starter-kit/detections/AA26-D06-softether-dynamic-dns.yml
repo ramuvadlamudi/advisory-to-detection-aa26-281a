@@ -1,0 +1,31 @@
+# AA26-D06: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D06"
+name: "AA26-281A - SoftEther dynamic DNS - Rule"
+behaviour: "SoftEther reaching its server through dynamic DNS or VPN Azure"
+description: "A host resolves SoftEther dynamic DNS or VPN Azure names, which SoftEther uses to reach its server through firewalls."
+mitre_attack:
+  - "T1572"
+  - "T1568"
+data_sources: "DNS logs: src, query"
+cim: "Network_Resolution"
+prerequisites: "None beyond the data sources"
+search: |
+  | tstats count from datamodel=Network_Resolution where DNS.query IN ("*.softether.net","*.vpnazure.net") by DNS.src DNS.query
+  | rename DNS.src as src DNS.query as query
+  | lookup aa26_lab_assets ip AS src OUTPUT host AS dest owner
+  | eval dest=coalesce(dest,src)
+schedule: "15 * * * *"
+search_window: "-70m@m to -10m@m"
+severity: "medium"
+risk: "dest (system) +20, owner (user) +20"
+false_positives:
+  - "Approved SoftEther users who rely on its dynamic DNS"
+tuning:
+  - "Exclude hosts in the approved remote-access register"
+tests:
+  positive: "WS-0417 resolving vpn583920174.softether.net (18 lookups) fires once"
+  negative: "Hosts without SoftEther never resolve these names"
+owner: "SOC Detection Engineering (Network)"
+review_date: "2027-02-23"
+response: "Corroborate with AA26-D05 on the same host."
+lab_backtest_rows: 1

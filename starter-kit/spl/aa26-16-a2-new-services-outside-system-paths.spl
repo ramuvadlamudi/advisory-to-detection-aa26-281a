@@ -1,0 +1,4 @@
+``` AA26 16 - A2 - New services outside system paths: New autostart services outside system paths ```
+`wineventlog_system` EventCode=7045
+    NOT ImagePath IN ("*\\Windows\\System32\\*","*\\Program Files*")
+| table _time Computer ServiceName ImagePath StartType

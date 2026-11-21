@@ -1,0 +1,468 @@
+<dashboard version="2" theme="dark">
+  <label>Exposure: old CVEs, still exploited</label>
+  <description>The advisory's eight exploited CVEs date from 2014 to 2023. Which do we run, which face the internet, who tried them, and would we see it?</description>
+  <definition><![CDATA[
+{
+  "title": "Exposure: old CVEs, still exploited",
+  "description": "The advisory's eight exploited CVEs date from 2014 to 2023. Which do we run, which face the internet, who tried them, and would we see it?",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#02C8FF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "successfully exploited, 2014 to 2023"
+      },
+      "title": "Advisory CVEs",
+      "dataSources": {
+        "primary": "ds_1"
+      }
+    },
+    "viz_2": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#FF9000",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "CVE-2014-6278, GNU Bash"
+      },
+      "title": "Oldest",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#FF9000",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "exploited recently, not a decade ago"
+      },
+      "title": "Newly added to CISA KEV",
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#02C8FF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "from the vulnerability inventory"
+      },
+      "title": "On our assets",
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#EB4651",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off",
+        "underLabel": "internet-facing and scanned by the actor"
+      },
+      "title": "Patch now",
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    },
+    "viz_6": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "priority": {
+            "data": "> table | seriesByName(\"priority\") | formatByType(priorityFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"priority\") | matchValue(priorityColors)",
+            "rowColors": "> table | seriesByName(\"priority\") | matchValue(priorityColorsText)",
+            "width": 180
+          },
+          "telemetry": {
+            "data": "> table | seriesByName(\"telemetry\") | formatByType(telemetryFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"telemetry\") | matchValue(telemetryColors)",
+            "rowColors": "> table | seriesByName(\"telemetry\") | matchValue(telemetryColorsText)",
+            "width": 120
+          },
+          "cve": {
+            "width": 150
+          },
+          "age": {
+            "width": 60
+          },
+          "product": {
+            "width": 230
+          },
+          "new_in_KEV": {
+            "width": 100
+          },
+          "asset": {
+            "width": 100
+          },
+          "internet_facing": {
+            "width": 120
+          },
+          "scanned_by": {
+            "width": 190
+          },
+          "attempted_by": {
+            "width": 190
+          }
+        }
+      },
+      "title": "The advisory's CVEs in our estate: present, exposed, scanned, attempted, visible?",
+      "context": {
+        "priorityColors": [
+          {
+            "match": "1 Patch now",
+            "value": "#EB4651"
+          },
+          {
+            "match": "2 Patch this week",
+            "value": "#FF9000"
+          },
+          {
+            "match": "3 Patch this month",
+            "value": "#6B6B6B"
+          }
+        ],
+        "priorityColorsText": [
+          {
+            "match": "1 Patch now",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "2 Patch this week",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "3 Patch this month",
+            "value": "#FFFFFF"
+          }
+        ],
+        "priorityFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        },
+        "telemetryColors": [
+          {
+            "match": "NO LOGS",
+            "value": "#EB4651"
+          }
+        ],
+        "telemetryColorsText": [
+          {
+            "match": "NO LOGS",
+            "value": "#FFFFFF"
+          }
+        ],
+        "telemetryFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_6"
+      }
+    },
+    "viz_7": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "verdict": {
+            "data": "> table | seriesByName(\"verdict\") | formatByType(verdictFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"verdict\") | matchValue(verdictColors)",
+            "rowColors": "> table | seriesByName(\"verdict\") | matchValue(verdictColorsText)",
+            "width": 220
+          },
+          "src": {
+            "width": 130
+          },
+          "direction": {
+            "width": 90
+          },
+          "techniques": {
+            "width": 90
+          },
+          "attempts": {
+            "width": 640
+          },
+          "requests": {
+            "width": 80
+          },
+          "answered": {
+            "width": 80
+          },
+          "first": {
+            "width": 110
+          }
+        }
+      },
+      "title": "Who tried the advisory's exploits against us, and did anything answer?",
+      "context": {
+        "verdictColors": [
+          {
+            "match": "multi-exploit sweep: investigate",
+            "value": "#EB4651"
+          },
+          {
+            "match": "opportunistic probe",
+            "value": "#6B6B6B"
+          },
+          {
+            "match": "approved scanner",
+            "value": "#45991F"
+          }
+        ],
+        "verdictColorsText": [
+          {
+            "match": "multi-exploit sweep: investigate",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "opportunistic probe",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "approved scanner",
+            "value": "#FFFFFF"
+          }
+        ],
+        "verdictFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_7"
+      }
+    },
+    "viz_8": {
+      "type": "splunk.markdown",
+      "options": {
+        "markdown": "### Why 2014 CVEs still work in 2026\n- **Automation makes old cheap.** MicroScan carries 1,300+ scripts; trying every exploit on every host costs the actor nothing.\n- **Old systems outlive their patches.** Edge appliances and legacy servers drift out of patch cycles, and often send no logs.\n- **Five of the eight were only added to CISA KEV with this advisory:** recent exploitation, not history.\n- **Defend with inventory:** what you run, what faces the internet, and whether it logs to your SIEM.",
+        "fontColor": "#B4B9C0"
+      }
+    },
+    "viz_9": {
+      "type": "splunk.table",
+      "options": {
+        "count": 15,
+        "columnFormat": {
+          "time": {
+            "width": 130
+          },
+          "c_ip": {
+            "width": 110
+          },
+          "attempt": {
+            "width": 200
+          },
+          "request": {
+            "width": 390
+          },
+          "sc_status": {
+            "width": 70
+          }
+        }
+      },
+      "title": "What the sweep looked like (the actor's requests, as logged)",
+      "dataSources": {
+        "primary": "ds_9"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "Advisory CVEs",
+      "options": {
+        "query": "| inputlookup aa26_advisory_cves.csv | stats count"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "Oldest",
+      "options": {
+        "query": "| inputlookup aa26_advisory_cves.csv | stats min(year) as y | eval value=(tonumber(strftime(now(),\"%Y\"))-y).\" years\" | fields value"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Newly added to CISA KEV",
+      "options": {
+        "query": "| inputlookup aa26_advisory_cves.csv | where kev_added_with_advisory=\"yes\" | stats count"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "On our assets",
+      "options": {
+        "query": "| inputlookup aa26_lab_vulns.csv | stats dc(cve) as n | appendcols [| inputlookup aa26_advisory_cves.csv | stats count as t] | eval value=n.\" of \".t | fields value"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "Patch now",
+      "options": {
+        "query": "| inputlookup aa26_advisory_cves.csv\n| eval age=tonumber(strftime(now(),\"%Y\"))-year\n| join type=left cve\n    [| inputlookup aa26_lab_vulns.csv | rename host as asset]\n| join type=left public_ip\n    [| tstats count from datamodel=Network_Traffic\n        where All_Traffic.dest_port IN (21,22,53,80,443,1080)\n        by All_Traffic.src All_Traffic.dest\n     | eventstats dc(All_Traffic.dest) as reach by All_Traffic.src\n     | where reach>=25\n     | lookup aa26_approved_scanners src AS All_Traffic.src OUTPUT reason\n     | where isnull(reason)\n     | stats values(All_Traffic.src) as scanned_by by All_Traffic.dest\n     | rename All_Traffic.dest as public_ip]\n| join type=left cve\n    [search `aa26_iis` (cs_User_Agent=\"*()*\" OR cs_uri_stem IN (\"/dana-na/*\",\"/uploads/user\",\"/FileUploader.ashx\",\"/web-apps/apps/api/documents/*\") OR cs_uri_query IN (\"*memberAccess*\",\"*ognl*\",\"*startsWith*\",\"*%3Cscript*\",\"*%3Csvg*\",\"*%3Cimg*\",\"*onerror*\",\"*onload*\"))\n    | eval attempt=case(match(cs_User_Agent,\"[(][)][+ ]?[{]\"),\"CVE-2014-6278 Bash\",\n        match(cs_uri_query,\"(?i)memberAccess|ognl\"),\"CVE-2016-3081 Struts\",\n        match(cs_uri_stem,\"(?i)^/dana-na/.*[.][.]/\"),\"CVE-2019-11510 Pulse Secure\",\n        cs_uri_stem==\"/uploads/user\" AND cs_method==\"POST\",\"CVE-2021-22205 GitLab\",\n        match(cs_uri_stem,\"(?i)^/FileUploader[.]ashx|^/web-apps/apps/api/documents/\"),\"CVE-2021-3199 ONLYOFFICE\",\n        match(cs_uri_query,\"(?i)[[]password[]].{0,4}startsWith\"),\"CVE-2023-22894 Strapi\",\n        match(cs_uri_query,\"(?i)%3C(script|svg|img)|onerror%3D|onload%3D\"),\"XSS payload\")\n    | where isnotnull(attempt)\n     | lookup aa26_approved_scanners src AS c_ip OUTPUT reason\n     | where isnull(reason)\n     | eval cve=mvindex(split(attempt,\" \"),0)\n     | stats values(c_ip) as attempted_by by cve]\n| join type=left asset\n    [| tstats count as events where index IN (exchange,web,o365,wineventlog,sysmon,firewall,dns) by host\n     | eval asset=upper(host) | fields asset events]\n| eval telemetry=case(isnull(asset),\"-\", events>0,\"logs to Splunk\", true(),\"NO LOGS\"),\n    priority=case(isnull(asset),\"Not found: confirm inventory\",\n        internet_facing==\"yes\" AND isnotnull(scanned_by),\"1 Patch now\",\n        internet_facing==\"yes\",\"2 Patch this week\",\n        true(),\"3 Patch this month\")\n| sort cve\n| table cve year age product impact kev_added_with_advisory asset internet_facing scanned_by attempted_by telemetry priority\n| where priority=\"1 Patch now\" | stats count"
+      }
+    },
+    "ds_6": {
+      "type": "ds.search",
+      "name": "The advisory's CVEs in our estate: present, exposed, scanned, attempted, visible?",
+      "options": {
+        "query": "| inputlookup aa26_advisory_cves.csv\n| eval age=tonumber(strftime(now(),\"%Y\"))-year\n| join type=left cve\n    [| inputlookup aa26_lab_vulns.csv | rename host as asset]\n| join type=left public_ip\n    [| tstats count from datamodel=Network_Traffic\n        where All_Traffic.dest_port IN (21,22,53,80,443,1080)\n        by All_Traffic.src All_Traffic.dest\n     | eventstats dc(All_Traffic.dest) as reach by All_Traffic.src\n     | where reach>=25\n     | lookup aa26_approved_scanners src AS All_Traffic.src OUTPUT reason\n     | where isnull(reason)\n     | stats values(All_Traffic.src) as scanned_by by All_Traffic.dest\n     | rename All_Traffic.dest as public_ip]\n| join type=left cve\n    [search `aa26_iis` (cs_User_Agent=\"*()*\" OR cs_uri_stem IN (\"/dana-na/*\",\"/uploads/user\",\"/FileUploader.ashx\",\"/web-apps/apps/api/documents/*\") OR cs_uri_query IN (\"*memberAccess*\",\"*ognl*\",\"*startsWith*\",\"*%3Cscript*\",\"*%3Csvg*\",\"*%3Cimg*\",\"*onerror*\",\"*onload*\"))\n    | eval attempt=case(match(cs_User_Agent,\"[(][)][+ ]?[{]\"),\"CVE-2014-6278 Bash\",\n        match(cs_uri_query,\"(?i)memberAccess|ognl\"),\"CVE-2016-3081 Struts\",\n        match(cs_uri_stem,\"(?i)^/dana-na/.*[.][.]/\"),\"CVE-2019-11510 Pulse Secure\",\n        cs_uri_stem==\"/uploads/user\" AND cs_method==\"POST\",\"CVE-2021-22205 GitLab\",\n        match(cs_uri_stem,\"(?i)^/FileUploader[.]ashx|^/web-apps/apps/api/documents/\"),\"CVE-2021-3199 ONLYOFFICE\",\n        match(cs_uri_query,\"(?i)[[]password[]].{0,4}startsWith\"),\"CVE-2023-22894 Strapi\",\n        match(cs_uri_query,\"(?i)%3C(script|svg|img)|onerror%3D|onload%3D\"),\"XSS payload\")\n    | where isnotnull(attempt)\n     | lookup aa26_approved_scanners src AS c_ip OUTPUT reason\n     | where isnull(reason)\n     | eval cve=mvindex(split(attempt,\" \"),0)\n     | stats values(c_ip) as attempted_by by cve]\n| join type=left asset\n    [| tstats count as events where index IN (exchange,web,o365,wineventlog,sysmon,firewall,dns) by host\n     | eval asset=upper(host) | fields asset events]\n| eval telemetry=case(isnull(asset),\"-\", events>0,\"logs to Splunk\", true(),\"NO LOGS\"),\n    priority=case(isnull(asset),\"Not found: confirm inventory\",\n        internet_facing==\"yes\" AND isnotnull(scanned_by),\"1 Patch now\",\n        internet_facing==\"yes\",\"2 Patch this week\",\n        true(),\"3 Patch this month\")\n| sort cve\n| table cve year age product impact kev_added_with_advisory asset internet_facing scanned_by attempted_by telemetry priority\n| rename kev_added_with_advisory as new_in_KEV | fields - year impact"
+      }
+    },
+    "ds_7": {
+      "type": "ds.search",
+      "name": "Who tried the advisory's exploits against us, and did anything answer?",
+      "options": {
+        "query": "`aa26_iis` (cs_User_Agent=\"*()*\" OR cs_uri_stem IN (\"/dana-na/*\",\"/uploads/user\",\"/FileUploader.ashx\",\"/web-apps/apps/api/documents/*\") OR cs_uri_query IN (\"*memberAccess*\",\"*ognl*\",\"*startsWith*\",\"*%3Cscript*\",\"*%3Csvg*\",\"*%3Cimg*\",\"*onerror*\",\"*onload*\"))\n| eval attempt=case(match(cs_User_Agent,\"[(][)][+ ]?[{]\"),\"CVE-2014-6278 Bash\",\n    match(cs_uri_query,\"(?i)memberAccess|ognl\"),\"CVE-2016-3081 Struts\",\n    match(cs_uri_stem,\"(?i)^/dana-na/.*[.][.]/\"),\"CVE-2019-11510 Pulse Secure\",\n    cs_uri_stem==\"/uploads/user\" AND cs_method==\"POST\",\"CVE-2021-22205 GitLab\",\n    match(cs_uri_stem,\"(?i)^/FileUploader[.]ashx|^/web-apps/apps/api/documents/\"),\"CVE-2021-3199 ONLYOFFICE\",\n    match(cs_uri_query,\"(?i)[[]password[]].{0,4}startsWith\"),\"CVE-2023-22894 Strapi\",\n    match(cs_uri_query,\"(?i)%3C(script|svg|img)|onerror%3D|onload%3D\"),\"XSS payload\")\n| where isnotnull(attempt)\n| lookup aa26_approved_scanners src AS c_ip OUTPUT reason AS approved\n| eval direction=if(cidrmatch(\"10.0.0.0/8\",c_ip),\"internal\",\"external\")\n| stats count as requests dc(attempt) as techniques values(attempt) as attempts count(eval(sc_status<400)) as answered\n    min(_time) as first values(approved) as approved values(direction) as direction by c_ip\n| eval verdict=case(isnotnull(approved),\"approved scanner\", techniques>=3,\"multi-exploit sweep: investigate\", true(),\"opportunistic probe\")\n| eval first=strftime(first,\"%d %b %H:%M\")\n| rename c_ip as src\n| sort - techniques\n| table src direction techniques attempts requests answered first verdict\n| eval attempts=mvjoin(attempts,\", \")"
+      }
+    },
+    "ds_9": {
+      "type": "ds.search",
+      "name": "What the sweep looked like (the actor's requests, as logged)",
+      "options": {
+        "query": "`aa26_iis` (cs_User_Agent=\"*()*\" OR cs_uri_stem IN (\"/dana-na/*\",\"/uploads/user\",\"/FileUploader.ashx\",\"/web-apps/apps/api/documents/*\") OR cs_uri_query IN (\"*memberAccess*\",\"*ognl*\",\"*startsWith*\",\"*%3Cscript*\",\"*%3Csvg*\",\"*%3Cimg*\",\"*onerror*\",\"*onload*\"))\n| eval attempt=case(match(cs_User_Agent,\"[(][)][+ ]?[{]\"),\"CVE-2014-6278 Bash\",\n    match(cs_uri_query,\"(?i)memberAccess|ognl\"),\"CVE-2016-3081 Struts\",\n    match(cs_uri_stem,\"(?i)^/dana-na/.*[.][.]/\"),\"CVE-2019-11510 Pulse Secure\",\n    cs_uri_stem==\"/uploads/user\" AND cs_method==\"POST\",\"CVE-2021-22205 GitLab\",\n    match(cs_uri_stem,\"(?i)^/FileUploader[.]ashx|^/web-apps/apps/api/documents/\"),\"CVE-2021-3199 ONLYOFFICE\",\n    match(cs_uri_query,\"(?i)[[]password[]].{0,4}startsWith\"),\"CVE-2023-22894 Strapi\",\n    match(cs_uri_query,\"(?i)%3C(script|svg|img)|onerror%3D|onload%3D\"),\"XSS payload\")\n| where isnotnull(attempt)\n| lookup aa26_approved_scanners src AS c_ip OUTPUT reason\n| where isnull(reason)\n| eventstats dc(attempt) as techniques by c_ip\n| where techniques>=3\n| eval time=strftime(_time,\"%d %b %H:%M:%S\"), request=cs_method.\" \".cs_uri_stem.if(cs_uri_query=\"-\",\"\",\"?\".substr(cs_uri_query,1,60))\n| sort _time\n| table time c_ip attempt request sc_status"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 1470
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 288,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 288,
+          "y": 0,
+          "w": 288,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 576,
+          "y": 0,
+          "w": 288,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 864,
+          "y": 0,
+          "w": 288,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 1152,
+          "y": 0,
+          "w": 288,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_6",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 160,
+          "w": 1440,
+          "h": 470
+        }
+      },
+      {
+        "item": "viz_7",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 640,
+          "w": 1440,
+          "h": 240
+        }
+      },
+      {
+        "item": "viz_8",
+        "type": "block",
+        "position": {
+          "x": 900,
+          "y": 890,
+          "w": 540,
+          "h": 330
+        }
+      },
+      {
+        "item": "viz_9",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 890,
+          "w": 900,
+          "h": 560
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

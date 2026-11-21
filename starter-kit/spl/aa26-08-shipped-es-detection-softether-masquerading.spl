@@ -1,0 +1,6 @@
+``` AA26 08 - Shipped ES detection - SoftEther masquerading: The shipped ES detection, run ad hoc ```
+`sysmon` EventID=1 process IN ("*conhost.exe*","*dllhost.exe*")
+    (Company="*SoftEther*" OR OriginalFileName="vpnbridge*.exe")
+| stats count min(_time) as firstTime
+    by dest process original_file_name Company parent_process_name user
+| convert ctime(firstTime)

@@ -1,0 +1,5 @@
+``` AA26 01 - Telemetry discovery: What data do we have, and how far back? ```
+| tstats count min(_time) as first max(_time) as last
+    where index=* by index sourcetype
+| eval days_retained=round((last-first)/86400)
+| sort - count

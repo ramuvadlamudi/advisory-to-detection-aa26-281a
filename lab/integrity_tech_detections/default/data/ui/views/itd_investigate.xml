@@ -1,0 +1,281 @@
+<dashboard version="2" theme="dark">
+  <label>Investigate an entity</label>
+  <description>Everything the detections know about one user or host, in order, with the context to decide fast.</description>
+  <definition><![CDATA[
+{
+  "title": "Investigate an entity",
+  "description": "Everything the detections know about one user or host, in order, with the context to decide fast.",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    },
+    "input_entity": {
+      "type": "input.text",
+      "title": "User or host",
+      "options": {
+        "token": "entity",
+        "defaultValue": "j.citizen"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#EB4651",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "Total risk",
+      "dataSources": {
+        "primary": "ds_1"
+      }
+    },
+    "viz_2": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#02C8FF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "ATT&CK tactics",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#02C8FF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "Detections",
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.singlevalue",
+      "options": {
+        "majorColor": "#FFFFFF",
+        "sparklineDisplay": "off",
+        "trendDisplay": "off"
+      },
+      "title": "First signal",
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "Risk events, in order",
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    },
+    "viz_6": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "seen_before": {
+            "data": "> table | seriesByName(\"seen_before\") | formatByType(seen_beforeFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"seen_before\") | matchValue(seen_beforeColors)",
+            "rowColors": "> table | seriesByName(\"seen_before\") | matchValue(seen_beforeColorsText)"
+          }
+        }
+      },
+      "title": "Where this account signs in from",
+      "context": {
+        "seen_beforeColors": [
+          {
+            "match": "NEVER",
+            "value": "#EB4651"
+          }
+        ],
+        "seen_beforeColorsText": [
+          {
+            "match": "NEVER",
+            "value": "#FFFFFF"
+          }
+        ],
+        "seen_beforeFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_6"
+      }
+    },
+    "viz_7": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "Who and what is at risk",
+      "dataSources": {
+        "primary": "ds_7"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "Total risk",
+      "options": {
+        "query": "index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" | stats sum(risk_score)"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "ATT&CK tactics",
+      "options": {
+        "query": "| tstats sum(All_Risk.calculated_risk_score) as risk dc(All_Risk.annotations.mitre_attack.mitre_tactic_id) as tactics dc(source) as detections from datamodel=Risk.All_Risk where source=\"AA26-281A - *\" AND All_Risk.risk_object=\"$entity$\" | fields tactics"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Detections",
+      "options": {
+        "query": "| tstats sum(All_Risk.calculated_risk_score) as risk dc(All_Risk.annotations.mitre_attack.mitre_tactic_id) as tactics dc(source) as detections from datamodel=Risk.All_Risk where source=\"AA26-281A - *\" AND All_Risk.risk_object=\"$entity$\" | fields detections"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "First signal",
+      "options": {
+        "query": "index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" | stats min(_time) as t | eval t=strftime(t,\"%d %b %H:%M\") | fields t"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "Risk events, in order",
+      "options": {
+        "query": "index=risk source=\"AA26-281A - *\" risk_object=\"$entity$\" | eval detection=replace(source,\"^AA26-281A - (.*) - Rule$\",\"\\1\") | eval time=strftime(_time,\"%d %b %H:%M\") | sort _time | table time detection risk_score risk_message"
+      }
+    },
+    "ds_6": {
+      "type": "ds.search",
+      "name": "Where this account signs in from",
+      "options": {
+        "query": "index=exchange sourcetype=ms:iis:auto\n    cs_username=\"$entity$\" sc_status=200\n| stats count min(_time) as first max(_time) as last\n    values(cs_User_Agent) as agents by cs_username c_ip\n| lookup aa26_lab_identities identity AS cs_username\n    OUTPUT office_ip home_ip mobile_ip\n| eval seen_before=case(c_ip==office_ip,\"office\", c_ip==home_ip,\"home\",\n    c_ip==mobile_ip,\"mobile gateway\", true(),\"NEVER\")\n| table c_ip seen_before count first last agents\n| convert ctime(first) ctime(last)\n| sort - count"
+      }
+    },
+    "ds_7": {
+      "type": "ds.search",
+      "name": "Who and what is at risk",
+      "options": {
+        "query": "| inputlookup aa26_lab_identities.csv | search identity=\"$entity$\" | lookup aa26_lab_assets host AS workstation OUTPUT ip priority AS host_priority | table identity display title department workstation priority host_priority"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 710
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 360,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 720,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 1080,
+          "y": 0,
+          "w": 360,
+          "h": 150
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 160,
+          "w": 1440,
+          "h": 300
+        }
+      },
+      {
+        "item": "viz_6",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 470,
+          "w": 880,
+          "h": 220
+        }
+      },
+      {
+        "item": "viz_7",
+        "type": "block",
+        "position": {
+          "x": 880,
+          "y": 470,
+          "w": 560,
+          "h": 220
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time",
+      "input_entity"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

@@ -1,0 +1,10 @@
+release/
+__pycache__/
+*.pyc
+.DS_Store
+lab/TA-aa26-281a-lab/
+lab/dist/
+lab/output/
+lab/screenshots/
+starter-kit/app/
+*.zip

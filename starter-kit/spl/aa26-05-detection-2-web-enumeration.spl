@@ -1,0 +1,7 @@
+``` AA26 05 - Detection 2 - Web enumeration: Detection 2: dirsearch-style web enumeration ```
+| tstats count dc(Web.uri_path) as paths
+    from datamodel=Web
+    where Web.status=404
+      (Web.uri_path="*.php" OR Web.uri_path="*.asp*")
+    by Web.src Web.http_user_agent _time span=10m
+| where paths>=200

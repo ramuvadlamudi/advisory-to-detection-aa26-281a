@@ -1,0 +1,33 @@
+# AA26-D03: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D03"
+name: "AA26-281A - Scanning on advisory ports - Rule"
+behaviour: "Reconnaissance against the advisory's ports (21, 22, 53, 80, 443, 1080)"
+description: "One source touches 25 or more hosts in an hour on the ports AA26-281A lists (21, 22, 53, 80, 443, 1080). Approved scanners are excluded."
+mitre_attack:
+  - "T1595.002"
+data_sources: "Firewall or NetFlow: src, dest, dest_port"
+cim: "Network_Traffic"
+prerequisites: "None beyond the data sources"
+search: |
+  | tstats dc(All_Traffic.dest) as hosts dc(All_Traffic.dest_port) as ports from datamodel=Network_Traffic where All_Traffic.dest_port IN (21,22,53,80,443,1080) by All_Traffic.src _time span=1h
+  | rename All_Traffic.src as src
+  | where hosts>=25
+  | lookup aa26_approved_scanners src OUTPUT reason
+  | where isnull(reason)
+schedule: "5 * * * *"
+search_window: "-2h@h to -1h@h"
+severity: "low"
+risk: "src (system) +10"
+false_positives:
+  - "Approved vulnerability scanners and monitoring"
+  - "Internet background scanning"
+tuning:
+  - "aa26_approved_scanners lookup (scanner, owner, reason)"
+  - "Score external sources low; investigate internal sources"
+tests:
+  positive: "203.0.113.47 (41 hosts, 6 ports) fires; so does the internet background scanner, at low score"
+  negative: "The internal vulnerability scanner 10.20.0.50 is excluded by the lookup"
+owner: "SOC Detection Engineering (Network)"
+review_date: "2027-02-23"
+response: "Score only. Internal source scanning: open a host investigation."
+lab_backtest_rows: 3

@@ -1,0 +1,387 @@
+<dashboard version="2" theme="dark">
+  <label>Hunt: reconnaissance, exploitation and initial access</label>
+  <description>Who scanned us on the advisory's ports, what they tried, the spray that followed, and the sign-in that worked.</description>
+  <definition><![CDATA[
+{
+  "title": "Hunt: reconnaissance, exploitation and initial access",
+  "description": "Who scanned us on the advisory's ports, what they tried, the spray that followed, and the sign-in that worked.",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "verdict": {
+            "data": "> table | seriesByName(\"verdict\") | formatByType(verdictFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"verdict\") | matchValue(verdictColors)",
+            "rowColors": "> table | seriesByName(\"verdict\") | matchValue(verdictColorsText)"
+          }
+        }
+      },
+      "title": "Who is scanning: direction, baseline and what they did next (click a source to investigate)",
+      "context": {
+        "verdictColors": [
+          {
+            "match": "scanned, then signed in",
+            "value": "#EB4651"
+          },
+          {
+            "match": "background scanning",
+            "value": "#6B6B6B"
+          },
+          {
+            "match": "approved scanner",
+            "value": "#45991F"
+          }
+        ],
+        "verdictColorsText": [
+          {
+            "match": "scanned, then signed in",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "background scanning",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "approved scanner",
+            "value": "#FFFFFF"
+          }
+        ],
+        "verdictFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_1"
+      },
+      "eventHandlers": [
+        {
+          "type": "drilldown.linkToDashboard",
+          "options": {
+            "app": "integrity_tech_detections",
+            "dashboard": "itd_investigate",
+            "newTab": false,
+            "tokens": [
+              {
+                "token": "entity",
+                "value": "$row.src.value$"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "viz_2": {
+      "type": "splunk.column",
+      "options": {
+        "legendDisplay": "bottom",
+        "xAxisTitleVisibility": "hide",
+        "seriesColors": [
+          "#45991F",
+          "#6B6B6B",
+          "#EB4651"
+        ]
+      },
+      "title": "Hosts touched per hour on ports 21, 22, 53, 80, 443 and 1080 (sources touching 25+)",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "verdict": {
+            "data": "> table | seriesByName(\"verdict\") | formatByType(verdictFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"verdict\") | matchValue(verdictColors)",
+            "rowColors": "> table | seriesByName(\"verdict\") | matchValue(verdictColorsText)",
+            "width": 230
+          },
+          "src": {
+            "width": 120
+          },
+          "techniques": {
+            "width": 100
+          },
+          "attempts": {
+            "width": 760
+          },
+          "requests": {
+            "width": 90
+          },
+          "answered": {
+            "width": 90
+          }
+        }
+      },
+      "title": "Exploit attempts for the advisory's CVEs",
+      "context": {
+        "verdictColors": [
+          {
+            "match": "multi-exploit sweep: investigate",
+            "value": "#EB4651"
+          },
+          {
+            "match": "opportunistic probe",
+            "value": "#6B6B6B"
+          },
+          {
+            "match": "approved scanner",
+            "value": "#45991F"
+          }
+        ],
+        "verdictColorsText": [
+          {
+            "match": "multi-exploit sweep: investigate",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "opportunistic probe",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "approved scanner",
+            "value": "#FFFFFF"
+          }
+        ],
+        "verdictFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "verdict": {
+            "data": "> table | seriesByName(\"verdict\") | formatByType(verdictFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"verdict\") | matchValue(verdictColors)",
+            "rowColors": "> table | seriesByName(\"verdict\") | matchValue(verdictColorsText)"
+          }
+        }
+      },
+      "title": "Password spray across Exchange interfaces",
+      "context": {
+        "verdictColors": [
+          {
+            "match": "SPRAY + SUCCESS",
+            "value": "#EB4651"
+          },
+          {
+            "match": "SPRAY",
+            "value": "#FF9000"
+          }
+        ],
+        "verdictColorsText": [
+          {
+            "match": "SPRAY + SUCCESS",
+            "value": "#FFFFFF"
+          },
+          {
+            "match": "SPRAY",
+            "value": "#FFFFFF"
+          }
+        ],
+        "verdictFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "time": {
+            "width": 140
+          },
+          "evidence": {
+            "width": 170
+          },
+          "cs_username": {
+            "width": 100
+          },
+          "c_ip": {
+            "width": 110
+          },
+          "interface": {
+            "width": 150
+          },
+          "detail": {
+            "width": 130
+          }
+        }
+      },
+      "title": "The sign-in that worked: the evidence behind the detection",
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    },
+    "viz_6": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "Web enumeration (dirsearch-style)",
+      "dataSources": {
+        "primary": "ds_6"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "Who is scanning: direction, baseline and what they did next (click a source to investigate)",
+      "options": {
+        "query": "| tstats dc(All_Traffic.dest) as hosts dc(All_Traffic.dest_port) as ports\n    from datamodel=Network_Traffic\n    where All_Traffic.dest_port IN (21,22,53,80,443,1080)\n    by All_Traffic.src _time span=1h\n| rename All_Traffic.src as src\n| where hosts>=25\n| stats max(hosts) as hosts max(ports) as ports count as scan_hours\n    dc(eval(strftime(_time,\"%Y-%m-%d\"))) as scan_days min(_time) as first_scan by src\n| eval direction=if(cidrmatch(\"10.0.0.0/8\",src),\"internal\",\"external\")\n| lookup aa26_approved_scanners src OUTPUT reason as approved\n| join type=left src\n    [search `aa26_iis` sc_status=200 cs_username=* cs_username!=\"-\"\n     | stats dc(cs_username) as signed_in_as by c_ip | rename c_ip as src]\n| fillnull value=0 signed_in_as\n| eval verdict=case(isnotnull(approved),\"approved scanner\",\n    signed_in_as>0,\"scanned, then signed in\",\n    true(),\"background scanning\")\n| eval first_scan=strftime(first_scan,\"%d %b %H:%M\")\n| table src direction hosts ports scan_days first_scan signed_in_as verdict"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "Hosts touched per hour on ports 21, 22, 53, 80, 443 and 1080 (sources touching 25+)",
+      "options": {
+        "query": "| tstats dc(All_Traffic.dest) as hosts from datamodel=Network_Traffic where All_Traffic.dest_port IN (21,22,53,80,443,1080) by All_Traffic.src _time span=1h | rename All_Traffic.src as src | where hosts>=25 | timechart span=1h max(hosts) by src"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Exploit attempts for the advisory's CVEs",
+      "options": {
+        "query": "`aa26_iis` (cs_User_Agent=\"*()*\" OR cs_uri_stem IN (\"/dana-na/*\",\"/uploads/user\",\"/FileUploader.ashx\",\"/web-apps/apps/api/documents/*\") OR cs_uri_query IN (\"*memberAccess*\",\"*ognl*\",\"*startsWith*\",\"*%3Cscript*\",\"*%3Csvg*\",\"*%3Cimg*\",\"*onerror*\",\"*onload*\"))\n| eval attempt=case(match(cs_User_Agent,\"[(][)][+ ]?[{]\"),\"CVE-2014-6278 Bash\",\n    match(cs_uri_query,\"(?i)memberAccess|ognl\"),\"CVE-2016-3081 Struts\",\n    match(cs_uri_stem,\"(?i)^/dana-na/.*[.][.]/\"),\"CVE-2019-11510 Pulse Secure\",\n    cs_uri_stem==\"/uploads/user\" AND cs_method==\"POST\",\"CVE-2021-22205 GitLab\",\n    match(cs_uri_stem,\"(?i)^/FileUploader[.]ashx|^/web-apps/apps/api/documents/\"),\"CVE-2021-3199 ONLYOFFICE\",\n    match(cs_uri_query,\"(?i)[[]password[]].{0,4}startsWith\"),\"CVE-2023-22894 Strapi\",\n    match(cs_uri_query,\"(?i)%3C(script|svg|img)|onerror%3D|onload%3D\"),\"XSS payload\")\n| where isnotnull(attempt)\n| lookup aa26_approved_scanners src AS c_ip OUTPUT reason AS approved\n| eval direction=if(cidrmatch(\"10.0.0.0/8\",c_ip),\"internal\",\"external\")\n| stats count as requests dc(attempt) as techniques values(attempt) as attempts count(eval(sc_status<400)) as answered\n    min(_time) as first values(approved) as approved values(direction) as direction by c_ip\n| eval verdict=case(isnotnull(approved),\"approved scanner\", techniques>=3,\"multi-exploit sweep: investigate\", true(),\"opportunistic probe\")\n| eval first=strftime(first,\"%d %b %H:%M\")\n| rename c_ip as src\n| sort - techniques\n| table src direction techniques attempts requests answered first verdict\n| eval attempts=mvjoin(attempts,\", \") | fields - direction first"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "Password spray across Exchange interfaces",
+      "options": {
+        "query": "index=exchange sourcetype=ms:iis:auto\n    cs_uri_stem IN (\"/EWS/*\",\"/owa/*\",\"/ecp/*\",\"/oab/*\",\n      \"/mapi/*\",\"/rpc/*\",\"/autodiscover/*\",\"/powershell*\",\n      \"/Microsoft-Server-ActiveSync*\",\"/api/*\")\n| eval interface=lower(mvindex(split(cs_uri_stem,\"/\"),1))\n| bin _time span=30m\n| stats count(eval(sc_status=401)) as fails\n    count(eval(sc_status=200)) as wins values(interface) as ifs\n    by _time c_ip cs_username\n| eventstats sum(fails) as failures dc(ifs) as interfaces\n    dc(eval(if(fails>0,cs_username,null()))) as users by _time c_ip\n| where users>=10 AND failures/users<=3\n| stats max(failures) as failures max(users) as users\n    max(interfaces) as interfaces\n    values(eval(if(fails>0 AND wins>0,cs_username,null()))) as ok\n    by _time c_ip\n| eval verdict=if(isnotnull(ok),\"SPRAY + SUCCESS\",\"SPRAY\")\n| eval time=strftime(_time,\"%d %b %H:%M\") | table time c_ip failures users interfaces ok verdict"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "The sign-in that worked: the evidence behind the detection",
+      "options": {
+        "query": "`aa26_iis` sc_status=200\n    [search index=exchange sourcetype=ms:iis:auto\n    cs_uri_stem IN (\"/EWS/*\",\"/owa/*\",\"/ecp/*\",\"/oab/*\",\n      \"/mapi/*\",\"/rpc/*\",\"/autodiscover/*\",\"/powershell*\",\n      \"/Microsoft-Server-ActiveSync*\",\"/api/*\")\n| eval interface=lower(mvindex(split(cs_uri_stem,\"/\"),1))\n| bin _time span=30m\n| stats count(eval(sc_status=401)) as fails\n    count(eval(sc_status=200)) as wins values(interface) as ifs\n    by _time c_ip cs_username\n| eventstats sum(fails) as failures dc(ifs) as interfaces\n    dc(eval(if(fails>0,cs_username,null()))) as users by _time c_ip\n| where users>=10 AND failures/users<=3\n| stats max(failures) as failures max(users) as users\n    max(interfaces) as interfaces\n    values(eval(if(fails>0 AND wins>0,cs_username,null()))) as ok\n    by _time c_ip\n| eval verdict=if(isnotnull(ok),\"SPRAY + SUCCESS\",\"SPRAY\")\n| where verdict=\"SPRAY + SUCCESS\" | mvexpand ok | rename ok as cs_username | fields c_ip cs_username]\n| stats min(_time) as t count as requests values(cs_uri_stem) as interface by cs_username c_ip\n| eval evidence=\"IIS log, MAIL01\", detail=requests.\" requests in the session\"\n| append [search `wineventlog_security` EventCode=4624\n    [search index=exchange sourcetype=ms:iis:auto\n    cs_uri_stem IN (\"/EWS/*\",\"/owa/*\",\"/ecp/*\",\"/oab/*\",\n      \"/mapi/*\",\"/rpc/*\",\"/autodiscover/*\",\"/powershell*\",\n      \"/Microsoft-Server-ActiveSync*\",\"/api/*\")\n| eval interface=lower(mvindex(split(cs_uri_stem,\"/\"),1))\n| bin _time span=30m\n| stats count(eval(sc_status=401)) as fails\n    count(eval(sc_status=200)) as wins values(interface) as ifs\n    by _time c_ip cs_username\n| eventstats sum(fails) as failures dc(ifs) as interfaces\n    dc(eval(if(fails>0,cs_username,null()))) as users by _time c_ip\n| where users>=10 AND failures/users<=3\n| stats max(failures) as failures max(users) as users\n    max(interfaces) as interfaces\n    values(eval(if(fails>0 AND wins>0,cs_username,null()))) as ok\n    by _time c_ip\n| eval verdict=if(isnotnull(ok),\"SPRAY + SUCCESS\",\"SPRAY\")\n| where verdict=\"SPRAY + SUCCESS\" | mvexpand ok | rename ok as TargetUserName c_ip as IpAddress | fields TargetUserName IpAddress]\n    | stats min(_time) as t values(LogonType) as lt by TargetUserName IpAddress\n    | rename TargetUserName as cs_username IpAddress as c_ip\n    | eval evidence=\"Windows 4624, MAIL01\", interface=\"logon type \".lt, detail=\"by w3wp.exe (IIS)\"]\n| eval time=strftime(t,\"%d %b %H:%M:%S\") | sort t\n| table time evidence cs_username c_ip interface detail"
+      }
+    },
+    "ds_6": {
+      "type": "ds.search",
+      "name": "Web enumeration (dirsearch-style)",
+      "options": {
+        "query": "| tstats count dc(Web.uri_path) as paths\n    from datamodel=Web\n    where Web.status=404\n      (Web.uri_path=\"*.php\" OR Web.uri_path=\"*.asp*\")\n    by Web.src Web.http_user_agent _time span=10m\n| where paths>=200\n| rename Web.src as src | eval time=strftime(_time,\"%d %b %H:%M\") | table time src paths"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 1070
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 200
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 210,
+          "w": 1440,
+          "h": 240
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 460,
+          "w": 1440,
+          "h": 240
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 710,
+          "w": 640,
+          "h": 190
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 640,
+          "y": 710,
+          "w": 800,
+          "h": 190
+        }
+      },
+      {
+        "item": "viz_6",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 910,
+          "w": 1440,
+          "h": 140
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

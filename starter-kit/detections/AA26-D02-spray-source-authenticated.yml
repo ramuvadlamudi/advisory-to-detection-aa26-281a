@@ -1,0 +1,33 @@
+# AA26-D02: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D02"
+name: "AA26-281A - Spray source authenticated - Rule"
+behaviour: "A sprayed account then authenticates from the spraying source"
+description: "An account that a spraying source failed against then succeeds from that same source in the same 30 minutes: the sprayed password worked."
+mitre_attack:
+  - "T1078"
+  - "T1110.003"
+data_sources: "Exchange IIS W3C logs: c_ip, cs_username, sc_status"
+cim: "Web (partial)"
+prerequisites: "None beyond the data sources"
+search: |
+  `aa26_iis` cs_uri_stem IN ("/EWS/*","/owa/*","/ecp/*","/oab/*","/mapi/*","/rpc/*","/autodiscover/*","/powershell*","/Microsoft-Server-ActiveSync*","/api/*")
+  | bin _time span=30m
+  | stats count(eval(sc_status=401)) as fails count(eval(sc_status=200)) as wins by _time c_ip cs_username
+  | eventstats sum(fails) as failures dc(eval(if(fails>0,cs_username,null()))) as users by _time c_ip
+  | where users>=10 AND failures/users<=3 AND fails>0 AND wins>0
+  | rename c_ip as src cs_username as user
+schedule: "*/30 * * * *"
+search_window: "-70m@m to -10m@m"
+severity: "high"
+risk: "user (user) +40, src (system) +40"
+false_positives:
+  - "A user who mistyped once behind the same NAT as a spray (rare; check the user agent)"
+tuning:
+  - "Requires the account to be among the sprayed accounts and the success to come from the same source in the same 30 minutes"
+tests:
+  positive: "j.citizen: failed once from 203.0.113.47 during the spray, then 200s from the same address: fires once"
+  negative: "Users who succeed from the gateway during a spray without first failing from it stay silent"
+owner: "SOC Detection Engineering (Identity)"
+review_date: "2027-02-23"
+response: "Treat the account as compromised: reset the password, revoke sessions and tokens, confirm MFA on every Exchange protocol, and review mailbox activity since the success."
+lab_backtest_rows: 1

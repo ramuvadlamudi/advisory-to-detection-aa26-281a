@@ -1,0 +1,35 @@
+# AA26-D08: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D08"
+name: "AA26-281A - EWS volume far above normal - Rule"
+behaviour: "Scripted mailbox collection through Exchange Web Services (Curlc4.txt)"
+description: "A user's EWS calls in one hour are at least 500 and ten times their own 14-day hourly median, for users with at least 24 active hours of history (scripted mailbox collection)."
+mitre_attack:
+  - "T1114.002"
+data_sources: "Exchange IIS W3C logs: cs_username, c_ip, cs_uri_stem, cs_User_Agent, sc_status"
+cim: "Web (partial)"
+prerequisites: "None beyond the data sources"
+search: |
+  `aa26_iis` sc_status=200 cs_uri_stem="/EWS/Exchange.asmx"
+  | bin _time span=1h
+  | stats count as calls values(cs_User_Agent) as agents by _time cs_username c_ip
+  | eventstats median(calls) as typical count as active_hours by cs_username
+  | where active_hours>=24 AND calls>=500 AND calls>=10*typical
+  | eval hour=strftime(_time,"%Y-%m-%d %H:00")
+  | rename cs_username as user c_ip as src
+schedule: "10 * * * *"
+search_window: "-14d@h to @h"
+severity: "high"
+risk: "user (user) +50"
+false_positives:
+  - "Mailbox migrations, eDiscovery exports, backup service accounts"
+tuning:
+  - "Per-user baseline: ten times the user's own hourly median and at least 500 calls"
+  - "Skip users with fewer than 24 active hours, because a median of two or three hours is not a baseline"
+  - "Validate across the full retention, including low-volume users"
+tests:
+  positive: "j.citizen: 2,400 EWS calls in one hour from 203.0.113.52 with no user agent (typical 3) fires once"
+  negative: "svc-crm's steady 160 calls an hour stays silent"
+owner: "SOC Detection Engineering (Identity)"
+review_date: "2027-02-23"
+response: "Identify the client and source; if not a known integration, revoke the user's sessions and scope what was read."
+lab_backtest_rows: 1

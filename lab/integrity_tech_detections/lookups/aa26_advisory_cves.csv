@@ -1,0 +1,9 @@
+cve,year,product,weakness,impact,kev_added_with_advisory
+CVE-2014-6278,2014,GNU Bash,OS command injection (Shellshock variant),Remote code execution,no
+CVE-2015-3306,2015,ProFTPD 1.3.5,Improper access control (mod_copy),Unauthorised read,yes
+CVE-2015-5477,2015,ISC BIND 9,Data processing error (TKEY),Denial of service,yes
+CVE-2016-3081,2016,Apache Struts 2,Command injection (dynamic method invocation),Remote code execution,yes
+CVE-2019-11510,2019,Pulse Connect Secure,Path traversal,Unauthorised read,no
+CVE-2021-22205,2021,GitLab,Code injection (ExifTool),Remote code execution,no
+CVE-2021-3199,2021,ONLYOFFICE DocumentServer,Path traversal,Unauthorised write,yes
+CVE-2023-22894,2023,Strapi,Cleartext storage of sensitive information,Information disclosure,yes

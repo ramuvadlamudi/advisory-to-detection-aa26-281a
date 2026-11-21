@@ -1,0 +1,8 @@
+behaviour,status,evidence,detections
+Reconnaissance,Available,Firewall; positive and negative tests pass,Scanning on advisory ports
+Web enumeration and exploitation,Available,"IIS; tested. Edge appliances (VPN, FTP, DNS) send no logs",Web enumeration burst; Exploit attempts for advisory CVEs
+Password spraying,Available,Exchange IIS and AD; tested,Exchange password spray; Spray source authenticated
+VPN persistence,Partial,Windows only; no Linux endpoint telemetry,SoftEther masquerading as Windows binary; SoftEther dynamic DNS
+Mailbox collection,Partial,IIS for everyone; M365 audit for 30 of 120 mailboxes,EWS volume far above normal; Unapproved app reading many mailboxes
+Data exfiltration,Partial,Firewall bytes; no proxy logs,Upload-heavy host; Connection to known-bad IP
+Credential theft (DCSync),Missing,No replication SACL: nothing to search,DCSync by non-machine account

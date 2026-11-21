@@ -1,0 +1,5 @@
+``` AA26 28 - AI - First draft with assumed fields: AI's first draft, run as written ```
+index=exchange sourcetype=ms:iis:auto action=failure
+| bin _time span=30m
+| stats dc(user) as users count by _time src_ip
+| where users>=10

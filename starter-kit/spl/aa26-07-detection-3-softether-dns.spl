@@ -1,0 +1,4 @@
+``` AA26 07 - Detection 3 - SoftEther DNS: Detection 3: SoftEther dynamic DNS ```
+| tstats count from datamodel=Network_Resolution
+    where DNS.query IN ("*.softether.net","*.vpnazure.net")
+    by DNS.src DNS.query

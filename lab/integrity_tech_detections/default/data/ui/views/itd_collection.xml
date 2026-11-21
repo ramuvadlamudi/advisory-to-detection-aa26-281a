@@ -1,0 +1,215 @@
+<dashboard version="2" theme="dark">
+  <label>Hunt: mailbox collection</label>
+  <description>Email is the objective. Volume against each user's own normal, and an app reading mailboxes it shouldn't, event by event.</description>
+  <definition><![CDATA[
+{
+  "title": "Hunt: mailbox collection",
+  "description": "Email is the objective. Volume against each user's own normal, and an app reading mailboxes it shouldn't, event by event.",
+  "inputs": {
+    "input_time": {
+      "type": "input.timerange",
+      "title": "Time",
+      "options": {
+        "token": "global_time",
+        "defaultValue": "1789308000,1791410400"
+      }
+    }
+  },
+  "defaults": {
+    "dataSources": {
+      "ds.search": {
+        "options": {
+          "queryParameters": {
+            "earliest": "$global_time.earliest$",
+            "latest": "$global_time.latest$"
+          }
+        }
+      }
+    }
+  },
+  "visualizations": {
+    "viz_1": {
+      "type": "splunk.line",
+      "options": {
+        "legendDisplay": "bottom",
+        "xAxisTitleVisibility": "hide",
+        "seriesColors": [
+          "#EB4651",
+          "#6B6B6B"
+        ]
+      },
+      "title": "EWS calls per hour: j.citizen against a busy service account",
+      "dataSources": {
+        "primary": "ds_1"
+      }
+    },
+    "viz_2": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "EWS volume far above the user's own normal",
+      "dataSources": {
+        "primary": "ds_2"
+      }
+    },
+    "viz_3": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "Unapproved app reading many mailboxes (Microsoft 365)",
+      "dataSources": {
+        "primary": "ds_3"
+      }
+    },
+    "viz_4": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10
+      },
+      "title": "New app secrets and consents",
+      "dataSources": {
+        "primary": "ds_4"
+      }
+    },
+    "viz_5": {
+      "type": "splunk.table",
+      "options": {
+        "count": 10,
+        "columnFormat": {
+          "Operation": {
+            "data": "> table | seriesByName(\"Operation\") | formatByType(OperationFormat)",
+            "rowBackgroundColors": "> table | seriesByName(\"Operation\") | matchValue(OperationColors)",
+            "rowColors": "> table | seriesByName(\"Operation\") | matchValue(OperationColorsText)"
+          }
+        }
+      },
+      "title": "The app's audit trail: a secret is added, then seven mailboxes are read",
+      "context": {
+        "OperationColors": [
+          {
+            "match": "Add service principal credentials.",
+            "value": "#EB4651"
+          }
+        ],
+        "OperationColorsText": [
+          {
+            "match": "Add service principal credentials.",
+            "value": "#FFFFFF"
+          }
+        ],
+        "OperationFormat": {
+          "string": {
+            "unitPosition": "after"
+          }
+        }
+      },
+      "dataSources": {
+        "primary": "ds_5"
+      }
+    }
+  },
+  "dataSources": {
+    "ds_1": {
+      "type": "ds.search",
+      "name": "EWS calls per hour: j.citizen against a busy service account",
+      "options": {
+        "query": "`aa26_iis` sc_status=200 cs_uri_stem=\"/EWS/Exchange.asmx\" cs_username IN (\"j.citizen\",\"svc-crm\") | timechart span=1h count by cs_username"
+      }
+    },
+    "ds_2": {
+      "type": "ds.search",
+      "name": "EWS volume far above the user's own normal",
+      "options": {
+        "query": "index=exchange sourcetype=ms:iis:auto sc_status=200\n    cs_uri_stem=\"/EWS/Exchange.asmx\"\n| bin _time span=1h\n| stats count as calls values(cs_User_Agent) as agents\n    by _time cs_username c_ip\n| eventstats median(calls) as typical count as active_hours\n    by cs_username\n| where active_hours>=24 AND calls>=500 AND calls>=10*typical\n| eval hour=strftime(_time,\"%d %b %H:00\"), agents=coalesce(agents,\"(none)\") | table hour cs_username c_ip calls typical active_hours agents"
+      }
+    },
+    "ds_3": {
+      "type": "ds.search",
+      "name": "Unapproved app reading many mailboxes (Microsoft 365)",
+      "options": {
+        "query": "index=o365 Operation=MailItemsAccessed\n| stats dc(MailboxOwnerUPN) as mailboxes count by AppId\n| lookup approved_mail_apps AppId OUTPUT owner\n| where mailboxes>=5 AND isnull(owner)"
+      }
+    },
+    "ds_4": {
+      "type": "ds.search",
+      "name": "New app secrets and consents",
+      "options": {
+        "query": "index=o365 Operation IN (\"Add service principal credentials*\",\n    \"*Certificates and secrets*\",\"Consent to application*\")\n| table _time UserId Operation ObjectId\n| eval time=strftime(_time,\"%d %b %H:%M\") | table time UserId Operation ObjectId"
+      }
+    },
+    "ds_5": {
+      "type": "ds.search",
+      "name": "The app's audit trail: a secret is added, then seven mailboxes are read",
+      "options": {
+        "query": "`aa26_o365` Operation IN (\"Add service principal credentials*\",\"MailItemsAccessed\")\n| eval app=coalesce(AppId,ObjectId)\n| search [search `aa26_o365` Operation=MailItemsAccessed | stats dc(MailboxOwnerUPN) as m by AppId\n    | lookup approved_mail_apps AppId OUTPUT owner | where m>=5 AND isnull(owner) | rename AppId as app | fields app]\n| eval time=strftime(_time,\"%d %b %H:%M:%S\"), actor=if(match(UserId,\"^ServicePrincipal_\"),\"the app itself\",UserId),\n    ip=coalesce(ClientIP,ClientIPAddress), mailbox=coalesce(MailboxOwnerUPN,\"-\")\n| sort _time\n| table time Operation actor ip mailbox"
+      }
+    }
+  },
+  "layout": {
+    "type": "grid",
+    "options": {
+      "width": 1440,
+      "height": 790
+    },
+    "structure": [
+      {
+        "item": "viz_1",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 300
+        }
+      },
+      {
+        "item": "viz_2",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 310,
+          "w": 1440,
+          "h": 130
+        }
+      },
+      {
+        "item": "viz_3",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 450,
+          "w": 560,
+          "h": 140
+        }
+      },
+      {
+        "item": "viz_4",
+        "type": "block",
+        "position": {
+          "x": 0,
+          "y": 600,
+          "w": 560,
+          "h": 170
+        }
+      },
+      {
+        "item": "viz_5",
+        "type": "block",
+        "position": {
+          "x": 560,
+          "y": 450,
+          "w": 880,
+          "h": 320
+        }
+      }
+    ],
+    "globalInputs": [
+      "input_time"
+    ]
+  }
+}
+  ]]></definition>
+  <meta type="hiddenElements"><![CDATA[{"hideEdit": false, "hideOpenInSearch": false, "hideExport": false}]]></meta>
+</dashboard>

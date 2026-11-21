@@ -1,0 +1,12 @@
+``` AA26 25 - Investigate - Where j.citizen signs in from: Investigation: is this really j.citizen? ```
+index=exchange sourcetype=ms:iis:auto
+    cs_username="j.citizen" sc_status=200
+| stats count min(_time) as first max(_time) as last
+    values(cs_User_Agent) as agents by cs_username c_ip
+| lookup aa26_lab_identities identity AS cs_username
+    OUTPUT office_ip home_ip mobile_ip
+| eval seen_before=case(c_ip==office_ip,"office", c_ip==home_ip,"home",
+    c_ip==mobile_ip,"mobile gateway", true(),"NEVER")
+| table c_ip seen_before count first last agents
+| convert ctime(first) ctime(last)
+| sort - count

@@ -1,0 +1,15 @@
+<nav search_view="search" color="#07182D">
+  <view name="itd_overview" default="true" />
+  <view name="itd_storyline" />
+  <collection label="Hunts">
+    <view name="itd_exposure" />
+    <view name="itd_recon" />
+    <view name="itd_persistence" />
+    <view name="itd_collection" />
+  </collection>
+  <view name="itd_investigate" />
+  <view name="itd_response" />
+  <view name="itd_readiness" />
+  <view name="itd_detections" />
+  <view name="search" />
+</nav>

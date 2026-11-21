@@ -1,0 +1,30 @@
+# AA26-D11: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D11"
+name: "AA26-281A - DCSync by non-machine account - Rule"
+behaviour: "DCSync with DC.exe or secretsdump (directory replication by a non-DC account)"
+description: "Directory replication rights used by an account that is not a domain controller (needs 4662 auditing with the replication SACL)."
+mitre_attack:
+  - "T1003.006"
+data_sources: "Security event 4662 on domain controllers: SubjectUserName, Properties, AccessMask"
+cim: "None (vendor fields)"
+prerequisites: "Needs two settings, not one: (1) Advanced Audit Policy, DS Access > Audit Directory Service Access (Success) on domain controllers; (2) a SACL on the domain root auditing Success for Everyone on the three control-access rights: Replicating Directory Changes, Replicating Directory Changes All, and Replicating Directory Changes In Filtered Set. Without the SACL, 4662 is never written for replication."
+search: |
+  `wineventlog_security` EventCode=4662 AccessMask=0x100 Properties IN ("*1131f6aa-9c07-11d1-f79f-00c04fc2dcd2*","*1131f6ad-9c07-11d1-f79f-00c04fc2dcd2*","*89e95b76-444d-4c62-991a-0facbeda640c*") NOT SubjectUserName="*$"
+  | stats count min(_time) as first_seen by SubjectUserName Computer
+  | rename SubjectUserName as user
+schedule: "*/30 * * * *"
+search_window: "-70m@m to -10m@m"
+severity: "critical"
+risk: "user (user) +80"
+false_positives:
+  - "Microsoft Entra Connect (MSOL_ accounts)"
+  - "dcdiag and other replication tests"
+tuning:
+  - "Allow-list the Entra Connect account by name"
+tests:
+  positive: "Cannot be tested in the lab: no 4662 events, because the SACL was never set. Record it as a gap"
+  negative: "Domain controller computer accounts (ending in $) replicating normally stay silent"
+owner: "SOC Detection Engineering (Identity)"
+review_date: "2027-02-23"
+response: "Treat every domain credential as exposed: contain the account, reset krbtgt twice, and plan eviction."
+lab_backtest_rows: 0

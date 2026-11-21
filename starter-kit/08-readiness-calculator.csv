@@ -1,0 +1,8 @@
+behaviour,weight_1_to_3,coverage_0_to_1,maturity,evidence
+Scanning,1,1.0,tested,Firewall covers every internet-facing address
+Web enumeration,1,1.0,tested,IIS on both web servers
+Exchange spraying,2,1.0,tested,All ten Exchange interfaces in IIS
+SoftEther persistence,3,0.5,tested,Sysmon on Windows only; Linux installs invisible
+Mail collection,3,0.6,tested,EWS fully; MailItemsAccessed on 30 of 120 mailboxes
+Staging and exfiltration,2,0.5,tested,EDR files and firewall; no web proxy
+DCSync,3,0.0,none,Rule deployed but blind: no 4662 events (no SACL)

@@ -1,0 +1,36 @@
+# AA26-D05: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D05"
+name: "AA26-281A - SoftEther masquerading as Windows binary - Rule"
+behaviour: "SoftEther VPN renamed as a Windows process for persistence (the flagship walkthrough)"
+description: "conhost.exe or dllhost.exe running outside System32/SysWOW64, or any process whose original file name is a SoftEther VPN client or bridge, unless the host and path are in the approved remote-access register. Risk goes to the host and its assigned owner."
+mitre_attack:
+  - "T1036.005"
+  - "T1133"
+  - "T1572"
+data_sources: "Sysmon event 1 or EDR process telemetry: dest, process_name, process_path, original_file_name, parent_process_name"
+cim: "Endpoint.Processes (needs original_file_name)"
+prerequisites: "None beyond the data sources"
+search: |
+  | tstats count min(_time) as first_seen values(Processes.parent_process_name) as parent_process_name from datamodel=Endpoint.Processes where (Processes.process_name IN ("conhost.exe","dllhost.exe") NOT Processes.process_path IN ("C:\\Windows\\System32\\*","C:\\Windows\\SysWOW64\\*")) OR Processes.original_file_name IN ("vpnclient*","vpnbridge*") by Processes.dest Processes.process_name Processes.original_file_name Processes.process_path
+  | rename Processes.* as *
+  | eval dest=upper(mvindex(split(dest,"."),0))
+  | lookup aa26_approved_remote_access dest process_path OUTPUT approved_by
+  | where isnull(approved_by)
+  | lookup aa26_lab_assets host AS dest OUTPUT owner
+schedule: "15 * * * *"
+search_window: "-70m@m to -10m@m"
+severity: "high"
+risk: "dest (system) +60, owner (user) +60"
+false_positives:
+  - "Approved SoftEther installs (IT remote access)"
+  - "Software that legitimately ships its own conhost-named helper"
+tuning:
+  - "aa26_approved_remote_access lookup: host plus exact path, with approver and review date"
+  - "Never allow-list by process name or by vendor alone"
+tests:
+  positive: "WS-0417: conhost.exe in C:\\ProgramData\\USOShared with original file name vpnbridge.exe fires once"
+  negative: "WS-0404's approved SoftEther VPN Client in Program Files and every real conhost.exe in System32 stay silent"
+owner: "SOC Detection Engineering (Endpoint)"
+review_date: "2027-02-23"
+response: "Corroborate with AA26-D06 and AA26-D07 on the same host, check the owner's recent authentication, then request approval to isolate the host. Block the SoftEther dynamic DNS name and hunt the same hash across the fleet."
+lab_backtest_rows: 1

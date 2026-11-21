@@ -1,0 +1,8 @@
+``` AA26 21 - A4 - Known-bad IP sweep: Sweep the advisory's and the seizure's IP addresses ```
+| tstats count sum(All_Traffic.bytes_out) as bytes_out
+    from datamodel=Network_Traffic
+    by All_Traffic.src All_Traffic.dest
+| lookup aa26_281a_ips ip AS All_Traffic.dest
+    OUTPUT ioc_source confidence last_seen expires
+| where isnotnull(ioc_source) AND confidence!="invalid"
+    AND strptime(expires,"%Y-%m-%d")>now()

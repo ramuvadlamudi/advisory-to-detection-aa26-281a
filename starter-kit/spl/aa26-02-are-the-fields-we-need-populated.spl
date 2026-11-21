@@ -1,0 +1,6 @@
+``` AA26 02 - Are the fields we need populated: Are the fields we need populated? ```
+index=exchange sourcetype=ms:iis:auto
+| fieldsummary
+| search field IN (c_ip cs_username cs_uri_stem
+                   sc_status cs_User_Agent)
+| table field count distinct_count

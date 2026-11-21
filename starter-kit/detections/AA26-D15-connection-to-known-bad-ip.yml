@@ -1,0 +1,32 @@
+# AA26-D15: generated from the AA26-281A lab. Adapt names, indexes and thresholds to your environment.
+id: "AA26-D15"
+name: "AA26-281A - Connection to known-bad IP - Rule"
+behaviour: "Traffic to an advisory or seizure IP address (indicator matching)"
+description: "Traffic to an IP address from AA26-281A or the 8 Oct 2026 DOJ seizure (aa26_281a_ips lookup). Invalid and expired indicators are skipped; confidence and last-seen date go into the risk message."
+mitre_attack:
+  - "T1071.001"
+  - "T1041"
+data_sources: "Firewall or NetFlow: src, dest, bytes_out"
+cim: "Network_Traffic"
+prerequisites: "None beyond the data sources"
+search: |
+  | tstats count sum(All_Traffic.bytes_out) as bytes_out from datamodel=Network_Traffic by All_Traffic.src All_Traffic.dest
+  | rename All_Traffic.* as *
+  | lookup aa26_281a_ips ip AS dest OUTPUT ioc_source confidence last_seen expires
+  | where isnotnull(ioc_source) AND confidence!="invalid" AND strptime(expires,"%Y-%m-%d")>now()
+  | eval MB_out=round(bytes_out/1e6,1)
+schedule: "15 * * * *"
+search_window: "-70m@m to -10m@m"
+severity: "medium"
+risk: "src (system) +30"
+false_positives:
+  - "Shared hosting or cloud addresses that have been reassigned"
+tuning:
+  - "Same lifecycle columns as AA26-D14; 514 of 515 advisory IPs were last seen over 12 months before publication"
+tests:
+  positive: "WS-0458 uploading 186 MB to 207.148.92.220 fires once (a low-confidence indicator that still matched)"
+  negative: "No other lab host touches the list"
+owner: "Cyber Threat Intelligence (indicator lifecycle)"
+review_date: "2027-01-06"
+response: "Corroborate with process and upload evidence on the host before containment."
+lab_backtest_rows: 1

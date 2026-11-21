@@ -1,0 +1,7 @@
+``` AA26 17 - A3 - Upload-heavy hosts: Hours in which a host uploads far more than it downloads ```
+| tstats sum(All_Traffic.bytes_out) as bytes_out
+    sum(All_Traffic.bytes_in) as bytes_in
+    from datamodel=Network_Traffic
+    by All_Traffic.src _time span=1h
+| where bytes_out > 5*bytes_in AND bytes_out > 100000000
+| eval MB_out=round(bytes_out/1e6)
